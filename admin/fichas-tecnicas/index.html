@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ficha Técnica e Custo dos Alimentos | Admin PANCHO MBARATE</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="../../assets/logo/mascot_logo.png">
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS & Custom Design System -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            mustard: {
+              DEFAULT: '#FFB800',
+              hover: '#E5A600',
+              light: '#FFF5D6',
+            },
+            redSport: {
+              DEFAULT: '#E51A24',
+              dark: '#C0141D',
+              light: '#FDE8E9',
+            },
+            coffee: {
+              DEFAULT: '#2A0808',
+              light: '#523030',
+              soft: '#7D5858',
+            },
+            creme: {
+              DEFAULT: '#FFF8ED',
+              dark: '#F5ECD9',
+            }
+          },
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="../../css/styles.css">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Supabase JS SDK (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #modal-print-sheet, #modal-print-sheet * {
+        visibility: visible;
+      }
+      #modal-print-sheet {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background: white !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-creme text-coffee min-h-screen font-sans antialiased selection:bg-mustard selection:text-coffee">
+
+  <!-- ========================================================================= -->
+  <!-- MODAL / TELA DE LOGIN SUPABASE AUTH / MODO DEMO -->
+  <!-- ========================================================================= -->
+  <div id="recipes-login-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-coffee/80 backdrop-blur-md hidden">
+    <div class="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 card-shadow border border-mustard/30 space-y-6">
+      
+      <div class="text-center space-y-2">
+        <div class="w-16 h-16 mx-auto rounded-full overflow-hidden border-2 border-mustard bg-white shadow-md">
+          <img src="../../assets/logo/mascot_logo.png" alt="PANCHO MBARATE" class="w-full h-full object-contain">
+        </div>
+        <h1 class="text-2xl font-black text-coffee tracking-tight">
+          Painel Gestor <span class="text-redSport">Mbarate</span>
+        </h1>
+        <p class="text-xs text-coffee-soft">
+          Acesso restrito ao módulo de Fichas Técnicas e Custos (CMV)
+        </p>
+      </div>
+
+      <!-- Formulário de Login Auth -->
+      <form id="recipes-login-form" class="space-y-4">
+        <div class="space-y-1">
+          <label for="admin-email" class="block text-xs font-black uppercase tracking-wider text-coffee">Usuário ou E-mail</label>
+          <input type="text" id="admin-email" required placeholder="panchombarete" value="panchombarete" class="w-full px-4 py-3 rounded-2xl border-2 border-coffee/15 text-sm font-semibold focus:border-mustard focus:outline-none">
+        </div>
+
+        <div class="space-y-1">
+          <label for="admin-password" class="block text-xs font-black uppercase tracking-wider text-coffee">Senha</label>
+          <input type="password" id="admin-password" required placeholder="••••••••" class="w-full px-4 py-3 rounded-2xl border-2 border-coffee/15 text-sm font-semibold focus:border-mustard focus:outline-none">
+        </div>
+
+        <p id="login-error-msg" class="hidden text-xs font-bold text-redSport"></p>
+
+        <button type="submit" id="btn-login-submit" class="w-full py-3.5 rounded-2xl bg-mustard hover:bg-mustard-hover text-coffee font-black text-sm tracking-wide shadow-md btn-press transition-all">
+          ENTRAR NO PAINEL
+        </button>
+      </form>
+
+      <!-- Modo de Acesso Rápido / Demonstração Local -->
+      <div class="pt-4 border-t border-coffee/10 text-center space-y-2">
+        <p class="text-[11px] text-coffee-soft">
+          Desenvolvimento local ou sem credenciais Supabase configuradas?
+        </p>
+        <button type="button" id="btn-demo-access" class="px-4 py-2 rounded-xl bg-creme hover:bg-mustard-light border border-coffee/15 text-xs font-extrabold text-coffee transition-colors">
+          ⚡ Entrar em Modo Demo Local
+        </button>
+      </div>
+
+      <div class="text-center pt-2">
+        <a href="../../" class="text-xs font-bold text-coffee-soft hover:text-coffee">
+          ← Voltar para o Cardápio
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- DASHBOARD PRINCIPAL COM SIDEBAR RESPONSIVA -->
+  <!-- ========================================================================= -->
+  <div id="recipes-dashboard-container" class="min-h-screen flex flex-col lg:flex-row">
+    
+    <!-- BACKDROP MOBILE PARA A SIDEBAR -->
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-coffee/60 backdrop-blur-sm z-40 hidden lg:hidden"></div>
+
+    <!-- SIDEBAR LATERAL (DESKTOP E GAVETA MOBILE) -->
+    <aside id="admin-sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-coffee/10 flex flex-col transition-transform duration-300 transform -translate-x-full lg:translate-x-0 lg:static lg:z-auto">
+      
+      <!-- Cabeçalho da Sidebar -->
+      <div class="p-5 border-b border-coffee/10 flex items-center justify-between">
+        <a href="/admin/" class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-mustard bg-white shadow-sm flex-shrink-0">
+            <img src="../../assets/logo/mascot_logo.png" alt="Logo" class="w-full h-full object-contain">
+          </div>
+          <div>
+            <h2 class="text-sm font-black tracking-tight text-coffee leading-tight">
+              PANCHO <span class="text-redSport">MBARATE</span>
+            </h2>
+            <p class="text-[10px] font-bold text-coffee-soft uppercase tracking-wider">
+              Painel de Gestão
+            </p>
+          </div>
+        </a>
+
+        <!-- Botão Fechar Mobile -->
+        <button type="button" id="btn-close-mobile-sidebar" class="p-2 rounded-xl text-coffee hover:bg-creme lg:hidden" aria-label="Fechar Menu">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Navegação da Sidebar -->
+      <nav class="flex-1 p-4 space-y-1.5 overflow-y-auto text-xs font-extrabold">
+        
+        <div class="px-3 py-2 text-[10px] uppercase font-black tracking-wider text-coffee-soft">
+          Operação & Cardápio
+        </div>
+
+        <a href="/admin/#orders" class="flex items-center gap-3 px-3 py-2.5 rounded-2xl text-coffee hover:bg-creme hover:text-coffee transition-all group">
+          <i data-lucide="clipboard-list" class="w-4 h-4 text-coffee-soft group-hover:text-coffee"></i>
+          <span>Pedidos em Tempo Real</span>
+        </a>
+
+        <a href="/admin/#metrics" class="flex items-center gap-3 px-3 py-2.5 rounded-2xl text-coffee hover:bg-creme hover:text-coffee transition-all group">
+          <i data-lucide="chart-pie" class="w-4 h-4 text-coffee-soft group-hover:text-coffee"></i>
+          <span>Métricas & Vendas</span>
+        </a>
+
+        <a href="/admin/#products" class="flex items-center gap-3 px-3 py-2.5 rounded-2xl text-coffee hover:bg-creme hover:text-coffee transition-all group">
+          <i data-lucide="utensils-crossed" class="w-4 h-4 text-coffee-soft group-hover:text-coffee"></i>
+          <span>Catálogo de Produtos</span>
+        </a>
+
+        <div class="px-3 pt-4 pb-2 text-[10px] uppercase font-black tracking-wider text-coffee-soft">
+          Gestão Financeira & Estratégica
+        </div>
+
+        <a href="/admin/precificacao" class="flex items-center gap-3 px-3 py-2.5 rounded-2xl text-coffee hover:bg-creme hover:text-coffee transition-all group">
+          <i data-lucide="calculator" class="w-4 h-4 text-coffee-soft group-hover:text-coffee"></i>
+          <span>Precificação e Custos</span>
+        </a>
+
+        <!-- Rota Ativa: Ficha Técnica e Custo dos Alimentos -->
+        <a href="/admin/fichas-tecnicas" class="flex items-center justify-between px-3 py-2.5 rounded-2xl bg-mustard text-coffee shadow-sm font-black transition-all">
+          <div class="flex items-center gap-3">
+            <i data-lucide="utensils-crossed" class="w-4 h-4 text-coffee"></i>
+            <span>Fichas Técnicas & CMV</span>
+          </div>
+          <span class="w-2 h-2 rounded-full bg-redSport"></span>
+        </a>
+
+        <a href="/admin/#settings" class="flex items-center gap-3 px-3 py-2.5 rounded-2xl text-coffee hover:bg-creme hover:text-coffee transition-all group">
+          <i data-lucide="settings" class="w-4 h-4 text-coffee-soft group-hover:text-coffee"></i>
+          <span>Configurações & Loja</span>
+        </a>
+
+        <div class="pt-4 border-t border-coffee/10 mt-4">
+          <a href="../../" target="_blank" class="flex items-center gap-3 px-3 py-2.5 rounded-2xl text-coffee hover:bg-mustard-light transition-all">
+            <i data-lucide="external-link" class="w-4 h-4 text-mustard"></i>
+            <span>Ver Cardápio Público</span>
+          </a>
+        </div>
+
+      </nav>
+
+      <!-- Rodapé da Sidebar (Usuário e Logout) -->
+      <div class="p-4 border-t border-coffee/10 bg-creme/40 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+            <span id="recipes-session-badge" class="text-[11px] font-black text-coffee truncate max-w-[140px]">
+              ● Admin Conectado
+            </span>
+          </div>
+          <button type="button" id="btn-recipes-logout" class="px-2.5 py-1 rounded-xl bg-redSport-light text-redSport hover:bg-redSport hover:text-white transition-colors text-[10px] font-black" title="Sair da Sessão">
+            Sair
+          </button>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- CONTEÚDO PRINCIPAL (ÁREA DE TRABALHO) -->
+    <div class="flex-1 flex flex-col min-w-0">
+      
+      <!-- TOP BAR RESPONSIVA -->
+      <header class="bg-white border-b border-coffee/10 sticky top-0 z-30 px-4 sm:px-6 py-3.5 no-print">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          
+          <div class="flex items-center gap-3">
+            <button type="button" id="btn-toggle-mobile-sidebar" class="p-2 rounded-xl bg-creme hover:bg-mustard-light border border-coffee/10 text-coffee lg:hidden" aria-label="Abrir Menu Lateral">
+              <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+            <div>
+              <div class="flex items-center gap-2">
+                <h1 class="text-lg sm:text-xl font-black text-coffee tracking-tight leading-none">
+                  Ficha Técnica e Custo dos Alimentos
+                </h1>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-mustard-light text-coffee border border-mustard/40 hidden sm:inline-block">
+                  CMV Gastronômico 360°
+                </span>
+              </div>
+              <p class="text-xs text-coffee-soft hidden sm:block pt-0.5">
+                Cálculo do Custo da Receita (CMV), insumos, embalagens, perdas e precificação por porção
+              </p>
+            </div>
+          </div>
+
+          <!-- Ações e Alternador de Moeda -->
+          <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+            
+            <!-- Seletor de Moeda e Cotação Guarani / Real -->
+            <div class="flex items-center gap-2 bg-creme p-1 rounded-2xl border border-coffee/15 text-xs">
+              <div class="flex items-center">
+                <button type="button" id="btn-currency-pyg" class="px-2.5 sm:px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 text-coffee-soft hover:text-coffee" title="Mudar para Guaranis (Moeda Oficial do Paraguai)">
+                  <span class="text-sm">🇵🇾</span>
+                  <span class="font-black">Gs. Guarani</span>
+                </button>
+                <button type="button" id="btn-currency-brl" class="px-2.5 sm:px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 text-coffee-soft hover:text-coffee" title="Mudar para Reais (BRL)">
+                  <span class="text-sm">🇧🇷</span>
+                  <span class="font-black">R$ Real</span>
+                </button>
+              </div>
+
+              <!-- Input de Cotação Dinâmica -->
+              <div class="hidden md:flex items-center gap-1.5 pl-2.5 border-l border-coffee/15 text-[11px] font-bold text-coffee-soft">
+                <span>Cotação: 1 R$ =</span>
+                <input 
+                  type="number" 
+                  id="input-exchange-rate" 
+                  step="10" 
+                  min="100" 
+                  value="1350"
+                  class="w-16 px-1.5 py-0.5 rounded-lg border border-coffee/20 text-xs font-black font-mono text-coffee bg-white text-center focus:outline-none focus:border-mustard"
+                  title="Cotação de conversão Real para Guaranis"
+                />
+                <span>Gs.</span>
+              </div>
+            </div>
+
+            <!-- Status de Salvamento -->
+            <div id="save-status-pill" class="px-3 py-1 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5 transition-all">
+              <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+              <span id="save-status-text">Salvo</span>
+            </div>
+
+            <!-- Botão Novo Insumo -->
+            <button type="button" id="btn-open-add-ingredient" class="px-3 py-2 rounded-2xl bg-creme hover:bg-mustard-light border border-coffee/15 text-coffee font-black text-xs flex items-center gap-1.5 transition-colors">
+              <i data-lucide="plus" class="w-3.5 h-3.5 text-mustard"></i>
+              <span class="hidden sm:inline">Novo Insumo</span>
+            </button>
+
+            <!-- Botão Salvar Geral -->
+            <button type="button" id="btn-save-recipes" class="px-4 py-2 rounded-2xl bg-mustard hover:bg-mustard-hover text-coffee font-black text-xs shadow-sm btn-press transition-all flex items-center gap-1.5">
+              <i data-lucide="save" class="w-3.5 h-3.5"></i>
+              <span>Salvar Dados</span>
+            </button>
+
+          </div>
+
+        </div>
+      </header>
+
+      <!-- ÁREA DE CONTEÚDO SCROLLÁVEL -->
+      <main class="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+        
+        <!-- NAVEGAÇÃO DE ABAS PRINCIPAIS -->
+        <div class="bg-white rounded-3xl p-1.5 border border-coffee/10 flex items-center gap-1 overflow-x-auto shadow-sm no-print">
+          
+          <button type="button" id="tab-btn-catalog" class="flex-1 min-w-[200px] py-2.5 px-4 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 bg-mustard text-coffee border-mustard shadow-sm">
+            <i data-lucide="boxes" class="w-4 h-4"></i>
+            <span>1. Catálogo de Insumos & Preços</span>
+            <span id="badge-count-ingredients" class="px-1.5 py-0.2 rounded-full text-[10px] bg-coffee text-white font-mono">23</span>
+          </button>
+
+          <button type="button" id="tab-btn-subrecipes" class="flex-1 min-w-[190px] py-2.5 px-4 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-creme text-coffee-soft border-transparent hover:text-coffee">
+            <i data-lucide="chef-hat" class="w-4 h-4"></i>
+            <span>2. Sub-Receitas & Preparos</span>
+            <span id="badge-count-subrecipes" class="px-1.5 py-0.2 rounded-full text-[10px] bg-coffee/10 text-coffee font-mono">2</span>
+          </button>
+
+          <button type="button" id="tab-btn-finalrecipes" class="flex-1 min-w-[210px] py-2.5 px-4 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-creme text-coffee-soft border-transparent hover:text-coffee">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+            <span>3. Fichas Técnicas de Produtos</span>
+            <span id="badge-count-finalrecipes" class="px-1.5 py-0.2 rounded-full text-[10px] bg-coffee/10 text-coffee font-mono">4</span>
+          </button>
+
+          <button type="button" id="tab-btn-simulation" class="flex-1 min-w-[210px] py-2.5 px-4 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-creme text-coffee-soft border-transparent hover:text-coffee">
+            <i data-lucide="trending-up" class="w-4 h-4"></i>
+            <span>4. Resumo & Simulação de Vendas</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[9px] bg-emerald-600 text-white font-black uppercase">Mensal</span>
+          </button>
+
+        </div>
+
+        <!-- ===================================================================== -->
+        <!-- SEÇÃO 1: CATÁLOGO DE INSUMOS & PREÇOS BASE -->
+        <!-- ===================================================================== -->
+        <section id="section-catalog" class="space-y-4">
+          
+          <!-- Banner Informativo e Filtros -->
+          <div class="bg-white rounded-3xl p-5 border border-coffee/10 card-shadow space-y-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h2 class="text-base font-black text-coffee tracking-tight flex items-center gap-2">
+                  <i data-lucide="database" class="w-4 h-4 text-mustard"></i>
+                  <span>Insumos & Matérias-Primas Cadastradas</span>
+                </h2>
+                <p class="text-xs text-coffee-soft pt-0.5">
+                  Informe o preço pago na compra por embalagem/fardo/kg. O sistema calcula o custo unitário automaticamente e propaga em cascata para todas as receitas.
+                </p>
+              </div>
+
+              <!-- Busca de Insumos -->
+              <div class="relative w-full md:w-72">
+                <input 
+                  type="text" 
+                  id="input-search-ingredients" 
+                  placeholder="Pesquisar insumo ou cód..." 
+                  class="w-full pl-9 pr-4 py-2 rounded-2xl border border-coffee/15 text-xs font-semibold focus:border-mustard focus:outline-none bg-creme/30"
+                />
+                <i data-lucide="search" class="w-4 h-4 text-coffee-soft absolute left-3 top-2.5"></i>
+              </div>
+            </div>
+
+            <!-- Chips de Filtro por Categoria -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+              <button type="button" class="category-filter-chip px-3 py-1.5 rounded-xl border border-coffee/10 font-black bg-mustard text-coffee" data-category="all">
+                Todos
+              </button>
+              <button type="button" class="category-filter-chip px-3 py-1.5 rounded-xl border border-coffee/10 font-bold bg-white text-coffee-soft hover:text-coffee" data-category="Carnes e Proteínas">
+                Carnes & Proteínas
+              </button>
+              <button type="button" class="category-filter-chip px-3 py-1.5 rounded-xl border border-coffee/10 font-bold bg-white text-coffee-soft hover:text-coffee" data-category="Panificação">
+                Panificação
+              </button>
+              <button type="button" class="category-filter-chip px-3 py-1.5 rounded-xl border border-coffee/10 font-bold bg-white text-coffee-soft hover:text-coffee" data-category="Laticínios">
+                Laticínios
+              </button>
+              <button type="button" class="category-filter-chip px-3 py-1.5 rounded-xl border border-coffee/10 font-bold bg-white text-coffee-soft hover:text-coffee" data-category="Mercearia e Secos">
+                Mercearia & Secos
+              </button>
+              <button type="button" class="category-filter-chip px-3 py-1.5 rounded-xl border border-coffee/10 font-bold bg-white text-coffee-soft hover:text-coffee" data-category="Temperos e Molhos">
+                Temperos & Molhos
+              </button>
+              <button type="button" class="category-filter-chip px-3 py-1.5 rounded-xl border border-coffee/10 font-bold bg-white text-coffee-soft hover:text-coffee" data-category="Embalagens e Descartáveis">
+                Embalagens & Descartáveis
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabela de Insumos -->
+          <div class="bg-white rounded-3xl border border-coffee/10 card-shadow overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-coffee/10 text-[10px] font-black uppercase tracking-wider text-coffee-soft bg-creme/50">
+                    <th class="py-3 px-4">Cód</th>
+                    <th class="py-3 px-4">Insumo / Matéria-Prima</th>
+                    <th class="py-3 px-4">Categoria</th>
+                    <th class="py-3 px-4" title="Altere a quantidade e a unidade de compra para recalcular automaticamente o custo unitário">Embalagem Compra ✎</th>
+                    <th class="py-3 px-4">Preço Compra</th>
+                    <th class="py-3 px-4">Custo Unitário Base</th>
+                    <th class="py-3 px-4 text-center" title="Fator de Correção (Perda de casca, limpeza ou cozimento)">F.C. Padrão</th>
+                    <th class="py-3 px-4 text-center">Receitas Vinculadas</th>
+                    <th class="py-3 px-4 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-ingredients">
+                  <!-- Renderizado dinamicamente via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- SEÇÃO 2: SUB-RECEITAS / PREPAROS BASE -->
+        <!-- ===================================================================== -->
+        <section id="section-subrecipes" class="space-y-6 hidden">
+          
+          <div class="bg-amber-50 border border-amber-200 rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-start gap-3">
+              <div class="w-9 h-9 rounded-2xl bg-mustard flex items-center justify-center flex-shrink-0 text-coffee mt-0.5">
+                <i data-lucide="soup" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-black text-amber-950">
+                  O que são Sub-Receitas (Produções Base)?
+                </h3>
+                <p class="text-xs text-amber-900 pt-0.5">
+                  São preparos artesanais produzidos em lote na cozinha (como maionese temperada ou calda de pudim). O sistema calcula o custo por grama ou porção, transformando a sub-receita em um insumo padronizado para os produtos finais!
+                </p>
+              </div>
+            </div>
+
+            <button type="button" id="btn-reset-defaults" class="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 border border-amber-300 text-xs font-black text-amber-950 transition-colors whitespace-nowrap self-start sm:self-auto">
+              ↺ Restaurar Padrões de Fábrica
+            </button>
+          </div>
+
+          <!-- Container dos Cards de Sub-Receitas -->
+          <div id="subrecipes-cards-container" class="space-y-6">
+            <!-- Renderizado dinamicamente via JS (Maionese Caseira e Calda Caramelizada) -->
+          </div>
+
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- SEÇÃO 3: FICHAS TÉCNICAS DE PRODUTOS FINAIS -->
+        <!-- ===================================================================== -->
+        <section id="section-finalrecipes" class="space-y-6 hidden">
+          
+          <!-- Seletor de Receitas (Abas Secundárias) -->
+          <div class="space-y-2">
+            <span class="text-[10px] uppercase font-black tracking-wider text-coffee-soft block">
+              Selecione o Produto Final para Visualizar a Ficha Técnica:
+            </span>
+            <div id="recipe-selection-pills" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <!-- Renderizado dinamicamente via JS -->
+            </div>
+          </div>
+
+          <!-- Card Detalhado da Ficha Técnica Ativa -->
+          <div id="recipe-detail-card-container">
+            <!-- Renderizado dinamicamente via JS -->
+          </div>
+
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- SEÇÃO 4: RESUMO & SIMULAÇÃO DE VENDAS -->
+        <!-- ===================================================================== -->
+        <section id="section-simulation" class="space-y-6 hidden">
+          
+          <!-- Cards de Indicadores Consolidados -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <div class="bg-white rounded-3xl p-5 border border-coffee/10 card-shadow space-y-1">
+              <span class="text-[10px] font-black uppercase tracking-wider text-coffee-soft block">Faturamento Mensal Projetado</span>
+              <strong id="sim-stat-total-revenue" class="text-xl sm:text-2xl font-black text-coffee block font-mono">
+                R$ 0,00
+              </strong>
+              <span class="text-[10px] text-coffee-soft block">Baseado no volume de vendas estimado</span>
+            </div>
+
+            <div class="bg-white rounded-3xl p-5 border border-coffee/10 card-shadow space-y-1">
+              <span class="text-[10px] font-black uppercase tracking-wider text-coffee-soft block">CMV Total Projetado (Custo Alimentos)</span>
+              <strong id="sim-stat-total-cmv" class="text-xl sm:text-2xl font-black text-amber-900 block font-mono">
+                R$ 0,00
+              </strong>
+              <span class="text-[10px] text-amber-700 block">Custo total dos ingredientes + embalagens</span>
+            </div>
+
+            <div class="bg-white rounded-3xl p-5 border border-coffee/10 card-shadow space-y-1">
+              <span class="text-[10px] font-black uppercase tracking-wider text-coffee-soft block">Margem de Contribuição Bruta</span>
+              <strong id="sim-stat-total-profit" class="text-xl sm:text-2xl font-black text-emerald-700 block font-mono">
+                R$ 0,00
+              </strong>
+              <span class="text-[10px] text-emerald-800 block">Lucro bruto acumulado para pagar custos fixos</span>
+            </div>
+
+            <div class="bg-white rounded-3xl p-5 border border-coffee/10 card-shadow space-y-1">
+              <span class="text-[10px] font-black uppercase tracking-wider text-coffee-soft block">Margem Bruta Média</span>
+              <strong id="sim-stat-avg-margin" class="text-xl sm:text-2xl font-black text-coffee block font-mono">
+                0,0%
+              </strong>
+              <span class="text-[10px] text-emerald-700 font-bold block">Meta recomendada: > 65%</span>
+            </div>
+
+          </div>
+
+          <!-- Tabela de Simulação Interativa -->
+          <div class="bg-white rounded-3xl border border-coffee/10 card-shadow overflow-hidden space-y-4 p-5 sm:p-6">
+            
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-coffee/10 pb-4">
+              <div>
+                <h3 class="text-base font-black text-coffee tracking-tight flex items-center gap-2">
+                  <i data-lucide="sliders" class="w-4 h-4 text-mustard"></i>
+                  <span>Simulador de Cenários & Projeção Mensal</span>
+                </h3>
+                <p class="text-xs text-coffee-soft pt-0.5">
+                  Altere a quantidade de "Vendas/Mês" de qualquer item para simular o faturamento e a margem bruta acumulada em tempo real.
+                </p>
+              </div>
+
+              <!-- Presets Rápidos -->
+              <div class="flex items-center gap-2 text-xs">
+                <span class="text-[10px] font-black uppercase text-coffee-soft">Cenários:</span>
+                <button type="button" id="btn-sim-preset-conservative" class="px-2.5 py-1 rounded-xl bg-creme hover:bg-mustard-light border border-coffee/15 font-bold text-coffee transition-colors">
+                  Conservador (-20%)
+                </button>
+                <button type="button" id="btn-sim-preset-standard" class="px-2.5 py-1 rounded-xl bg-creme hover:bg-mustard-light border border-coffee/15 font-bold text-coffee transition-colors">
+                  Padrão
+                </button>
+                <button type="button" id="btn-sim-preset-aggressive" class="px-2.5 py-1 rounded-xl bg-creme hover:bg-mustard-light border border-coffee/15 font-bold text-coffee transition-colors">
+                  Meta Arrojada (+25%)
+                </button>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-coffee/10 text-[10px] font-black uppercase tracking-wider text-coffee-soft bg-creme/50">
+                    <th class="py-3 px-4">Nome da Receita / Produto</th>
+                    <th class="py-3 px-4">Custo Unit. (CMV)</th>
+                    <th class="py-3 px-4">Preço Venda</th>
+                    <th class="py-3 px-4">Lucro Unit.</th>
+                    <th class="py-3 px-4 text-center">% Lucro</th>
+                    <th class="py-3 px-4 text-center">Estimativa Vendas/Mês</th>
+                    <th class="py-3 px-4">Faturamento Projetado</th>
+                    <th class="py-3 px-4">Margem Contribuição</th>
+                    <th class="py-3 px-4 text-center">Part. Faturamento</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-sales-simulation">
+                  <!-- Renderizado dinamicamente via JS -->
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+
+        </section>
+
+      </main>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: NOVO / EDITAR INSUMO OU EMBALAGEM -->
+  <!-- ========================================================================= -->
+  <div id="modal-add-ingredient" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-coffee/80 backdrop-blur-md hidden">
+    <div class="w-full max-w-lg bg-white rounded-3xl p-6 sm:p-7 card-shadow border border-coffee/15 space-y-5">
+      
+      <div class="flex items-center justify-between border-b border-coffee/10 pb-3">
+        <h3 id="modal-ingredient-title" class="text-base font-black text-coffee">
+          Novo Insumo ou Embalagem
+        </h3>
+        <button type="button" id="btn-close-modal-ingredient" class="p-1 rounded-xl text-coffee hover:bg-creme">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="form-add-ingredient" class="space-y-4">
+        <input type="hidden" id="input-ing-id">
+
+        <div class="space-y-1">
+          <label class="block text-xs font-black uppercase tracking-wider text-coffee">Nome do Insumo / Embalagem *</label>
+          <input type="text" id="input-ing-name" required placeholder="Ex: Queijo Mussarela Ralado" class="w-full px-3.5 py-2.5 rounded-2xl border border-coffee/20 text-xs font-bold focus:border-mustard focus:outline-none">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="block text-xs font-black uppercase tracking-wider text-coffee">Categoria</label>
+            <select id="select-ing-category" class="w-full px-3 py-2.5 rounded-2xl border border-coffee/20 text-xs font-bold focus:border-mustard focus:outline-none bg-white">
+              <option value="Carnes e Proteínas">Carnes & Proteínas</option>
+              <option value="Panificação">Panificação</option>
+              <option value="Laticínios">Laticínios</option>
+              <option value="Mercearia e Secos">Mercearia & Secos</option>
+              <option value="Temperos e Molhos">Temperos & Molhos</option>
+              <option value="Embalagens e Descartáveis">Embalagens & Descartáveis</option>
+            </select>
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-xs font-black uppercase tracking-wider text-coffee">Tipo de Item</label>
+            <select id="select-ing-type" class="w-full px-3 py-2.5 rounded-2xl border border-coffee/20 text-xs font-bold focus:border-mustard focus:outline-none bg-white">
+              <option value="ingrediente">Ingrediente Alimentar</option>
+              <option value="embalagem">Embalagem / Descartável</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="bg-creme/50 p-4 rounded-2xl border border-coffee/10 space-y-3">
+          <span class="text-[10px] font-black uppercase tracking-wider text-coffee-soft block">Embalagem de Compra & Preço Pago</span>
+          
+          <div class="grid grid-cols-3 gap-3">
+            <div class="space-y-1">
+              <label class="block text-[10px] font-bold text-coffee">Qtd Comprada</label>
+              <input type="number" step="any" min="0.01" id="input-ing-purchase-qty" required value="1" class="w-full px-3 py-2 rounded-xl border border-coffee/20 text-xs font-black bg-white focus:border-mustard focus:outline-none">
+            </div>
+
+            <div class="space-y-1">
+              <label class="block text-[10px] font-bold text-coffee">Unidade Compra</label>
+              <select id="select-ing-purchase-unit" class="w-full px-2 py-2 rounded-xl border border-coffee/20 text-xs font-bold bg-white focus:border-mustard focus:outline-none">
+                <option value="kg">kg</option>
+                <option value="g">g</option>
+                <option value="l">L (litro)</option>
+                <option value="ml">ml</option>
+                <option value="un">un (unidade)</option>
+                <option value="fardo">fardo</option>
+                <option value="cx">caixa</option>
+                <option value="pct">pacote</option>
+              </select>
+            </div>
+
+            <div class="space-y-1">
+              <label class="block text-[10px] font-bold text-coffee" id="label-ing-purchase-price">Preço Pago</label>
+              <input type="number" step="any" min="0" id="input-ing-purchase-price" required placeholder="0.00" class="w-full px-3 py-2 rounded-xl border border-coffee/20 text-xs font-black bg-white focus:border-mustard focus:outline-none font-mono">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 pt-1">
+            <div class="space-y-1">
+              <label class="block text-[10px] font-bold text-coffee">Unidade Base para Receitas</label>
+              <select id="select-ing-base-unit" class="w-full px-2 py-2 rounded-xl border border-coffee/20 text-xs font-bold bg-white focus:border-mustard focus:outline-none">
+                <option value="g">Gramas (g)</option>
+                <option value="ml">Mililitros (ml)</option>
+                <option value="un">Unidades (un)</option>
+              </select>
+            </div>
+
+            <div class="space-y-1">
+              <label class="block text-[10px] font-bold text-coffee" title="Fator de Correção padrão (ex: 1.10 para 10% de casca)">F.C. Padrão</label>
+              <input type="number" step="0.01" min="1.00" id="input-ing-fc" value="1.00" class="w-full px-3 py-2 rounded-xl border border-coffee/20 text-xs font-black bg-white focus:border-mustard focus:outline-none font-mono">
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-xs font-black uppercase tracking-wider text-coffee">Notas ou Fornecedor</label>
+          <input type="text" id="input-ing-notes" placeholder="Ex: Fornecedor Friato, entrega terças" class="w-full px-3.5 py-2 rounded-2xl border border-coffee/20 text-xs font-semibold focus:border-mustard focus:outline-none">
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-3">
+          <button type="button" id="btn-cancel-ingredient" onclick="document.getElementById('modal-add-ingredient').classList.add('hidden')" class="px-4 py-2 rounded-2xl bg-creme hover:bg-coffee/5 text-xs font-black text-coffee transition-colors">
+            Cancelar
+          </button>
+          <button type="submit" class="px-5 py-2.5 rounded-2xl bg-mustard hover:bg-mustard-hover text-coffee font-black text-xs shadow-md btn-press transition-all">
+            Salvar Insumo
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: ADICIONAR ITEM À RECEITA OU SUB-RECEITA -->
+  <!-- ========================================================================= -->
+  <div id="modal-add-item" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-coffee/80 backdrop-blur-md hidden">
+    <div class="w-full max-w-md bg-white rounded-3xl p-6 card-shadow border border-coffee/15 space-y-5">
+      
+      <div class="flex items-center justify-between border-b border-coffee/10 pb-3">
+        <h3 id="modal-item-title" class="text-base font-black text-coffee">
+          Adicionar Item à Receita
+        </h3>
+        <button type="button" id="btn-close-modal-item" class="p-1 rounded-xl text-coffee hover:bg-creme">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="form-add-item" class="space-y-4">
+        
+        <div class="space-y-1">
+          <label class="block text-xs font-black uppercase tracking-wider text-coffee">Escolha o Insumo ou Sub-Receita *</label>
+          <select id="select-item-choice" required class="w-full px-3.5 py-2.5 rounded-2xl border border-coffee/20 text-xs font-bold focus:border-mustard focus:outline-none bg-white">
+            <!-- Populado via JS -->
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="block text-xs font-black uppercase tracking-wider text-coffee">Quantidade Líquida</label>
+            <div class="flex items-center gap-1">
+              <input type="number" step="any" min="0.001" id="input-item-net-qty" required value="1" class="w-full px-3 py-2 rounded-xl border border-coffee/20 text-xs font-black bg-white focus:border-mustard focus:outline-none font-mono">
+              <span id="modal-item-unit-label" class="text-xs font-bold text-coffee font-mono">un</span>
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-xs font-black uppercase tracking-wider text-coffee" title="Fator de Correção (>= 1.00)">Fator de Correção (F.C.)</label>
+            <input type="number" step="0.01" min="1.00" id="input-item-fc" value="1.00" class="w-full px-3 py-2 rounded-xl border border-coffee/20 text-xs font-black bg-white focus:border-mustard focus:outline-none font-mono">
+          </div>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-3">
+          <button type="button" onclick="document.getElementById('modal-add-item').classList.add('hidden')" class="px-4 py-2 rounded-2xl bg-creme hover:bg-coffee/5 text-xs font-black text-coffee transition-colors">
+            Cancelar
+          </button>
+          <button type="submit" class="px-5 py-2.5 rounded-2xl bg-mustard hover:bg-mustard-hover text-coffee font-black text-xs shadow-md btn-press transition-all">
+            Adicionar à Ficha
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: IMPRESSÃO DA FICHA TÉCNICA DE COZINHA -->
+  <!-- ========================================================================= -->
+  <div id="modal-print-sheet" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-coffee/80 backdrop-blur-md hidden overflow-y-auto">
+    <div class="w-full max-w-3xl bg-white rounded-3xl p-6 card-shadow border border-coffee/15 space-y-4 my-8">
+      
+      <div class="flex items-center justify-between border-b border-coffee/10 pb-3 no-print">
+        <div class="flex items-center gap-2">
+          <i data-lucide="printer" class="w-5 h-5 text-mustard"></i>
+          <h3 class="text-base font-black text-coffee">
+            Ficha Técnica para Produção e Cozinha
+          </h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" id="btn-trigger-browser-print" class="px-4 py-1.5 rounded-xl bg-mustard hover:bg-mustard-hover text-coffee font-black text-xs shadow-sm flex items-center gap-1.5 transition-all">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+            <span>Imprimir Agora</span>
+          </button>
+          <button type="button" id="btn-close-modal-print" class="p-1 rounded-xl text-coffee hover:bg-creme">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Conteúdo formatado da Ficha para Impressão -->
+      <div id="print-sheet-content">
+        <!-- Renderizado dinamicamente via JS -->
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- TOAST NOTIFICATION FLUTUANTE -->
+  <!-- ========================================================================= -->
+  <div id="recipes-toast" class="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-xl font-black text-xs flex items-center gap-2 transform transition-all duration-300 translate-y-20 opacity-0 pointer-events-none bg-coffee text-white border border-mustard no-print">
+    <span id="toast-icon">✓</span>
+    <span id="toast-message">Operação realizada com sucesso!</span>
+  </div>
+
+  <!-- SCRIPT ES6 DO CONTROLADOR -->
+  <script type="module" src="../../js/recipes-ui.js"></script>
+
+</body>
+</html>

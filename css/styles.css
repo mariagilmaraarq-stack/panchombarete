@@ -1,0 +1,232 @@
+/* PANCHO MBARATE — DESIGN SYSTEM & STYLES */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  --color-mustard: #FFB800;
+  --color-mustard-hover: #E5A600;
+  --color-mustard-light: #FFF5D6;
+  --color-red: #E51A24;
+  --color-red-dark: #C0141D;
+  --color-red-light: #FDE8E9;
+  --color-white: #FFFFFF;
+  --color-coffee: #2A0808;
+  --color-coffee-light: #523030;
+  --color-creme: #FFF8ED;
+  --color-creme-dark: #F5ECD9;
+  --color-whatsapp: #25D366;
+  --color-whatsapp-dark: #1EBE5D;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background-color: var(--color-creme);
+  color: var(--color-coffee);
+}
+
+body {
+  min-height: 100vh;
+  background-color: var(--color-creme);
+  color: var(--color-coffee);
+  overflow-x: hidden;
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+
+/* Custom Utilities & Polish */
+.bg-creme { background-color: var(--color-creme); }
+.bg-creme-dark { background-color: var(--color-creme-dark); }
+.text-coffee { color: var(--color-coffee); }
+.bg-mustard { background-color: var(--color-mustard); }
+.text-mustard { color: var(--color-mustard); }
+.bg-red-sport { background-color: var(--color-red); }
+.text-red-sport { color: var(--color-red); }
+.bg-whatsapp { background-color: var(--color-whatsapp); }
+
+/* Header Top Bar */
+.topbar-yellow {
+  background-color: var(--color-mustard);
+  position: relative;
+  border-bottom: none !important;
+}
+
+.topbar-yellow::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3.5px;
+  background: linear-gradient(90deg, 
+    rgba(192, 20, 29, 0.65) 0%, 
+    rgba(255, 184, 0, 0.95) 25%, 
+    rgba(229, 26, 36, 0.85) 50%, 
+    rgba(255, 184, 0, 0.95) 75%, 
+    rgba(192, 20, 29, 0.65) 100%
+  );
+  box-shadow: 0 2px 6px rgba(192, 20, 29, 0.25);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Logo do Header: Sobreposta diretamente sobre o amarelo, sem círculo, sem fundo branco */
+.header-logo-link {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  z-index: 50;
+  flex-shrink: 0;
+}
+
+.header-logo-img {
+  height: 92px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(42, 8, 8, 0.28));
+  transform: translateY(12px);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), filter 0.25s ease;
+}
+
+.header-logo-link:hover .header-logo-img {
+  transform: translateY(12px) scale(1.05);
+  filter: drop-shadow(0 14px 22px rgba(42, 8, 8, 0.35));
+}
+
+@media (min-width: 768px) {
+  .header-logo-img {
+    height: 122px;
+    transform: translateY(18px);
+  }
+  .header-logo-link:hover .header-logo-img {
+    transform: translateY(18px) scale(1.05);
+    filter: drop-shadow(0 16px 26px rgba(42, 8, 8, 0.38));
+  }
+}
+
+@media (min-width: 1024px) {
+  .header-logo-img {
+    height: 132px;
+    transform: translateY(22px);
+  }
+  .header-logo-link:hover .header-logo-img {
+    transform: translateY(22px) scale(1.05);
+  }
+}
+
+/* Banner de Loja Fechada: Espaçamento no mobile/tablet para não sobrepor a logo */
+.closed-banner-content {
+  padding-left: 120px !important;
+  padding-right: 16px !important;
+}
+
+@media (min-width: 640px) {
+  .closed-banner-content {
+    padding-left: 150px !important;
+    padding-right: 24px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .closed-banner-content {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+}
+
+/* Banner Triangle Pointer Downward (estilo exato da imagem de referência) */
+.banner-triangle-pointer {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 22px solid transparent;
+  border-right: 22px solid transparent;
+  border-top: 20px solid var(--color-red);
+  z-index: 20;
+}
+
+@media (max-width: 640px) {
+  .banner-triangle-pointer {
+    display: none;
+  }
+}
+
+/* Card Elevations */
+.card-shadow {
+  box-shadow: 0 4px 20px -2px rgba(42, 8, 8, 0.07), 0 2px 6px -1px rgba(42, 8, 8, 0.04);
+}
+
+.card-shadow-hover {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-shadow-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px -4px rgba(42, 8, 8, 0.12), 0 6px 14px -2px rgba(42, 8, 8, 0.06);
+}
+
+/* Active Selection States */
+.pancho-card.is-selected {
+  border-color: var(--color-mustard) !important;
+  background: #FFFDF9;
+  box-shadow: 0 0 0 3px rgba(255, 184, 0, 0.35), 0 12px 28px -4px rgba(42, 8, 8, 0.12) !important;
+}
+
+.addon-card.is-selected {
+  border-color: var(--color-mustard) !important;
+  background-color: #FFFDF7 !important;
+  box-shadow: 0 0 0 2px var(--color-mustard), 0 4px 12px rgba(255, 184, 0, 0.18) !important;
+}
+
+/* Mobile sticky bottom bar styling */
+.mobile-cart-bar {
+  background: rgba(42, 8, 8, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 184, 0, 0.3);
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.25);
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+/* Modal Backdrop */
+.modal-backdrop {
+  background: rgba(42, 8, 8, 0.7);
+  backdrop-filter: blur(6px);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-creme);
+}
+::-webkit-scrollbar-thumb {
+  background: #E0D3C0;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-mustard);
+}
+
+/* Button Press Effects */
+.btn-press {
+  transition: transform 0.1s ease, filter 0.15s ease;
+}
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+/* Accessible Focus */
+a:focus-visible, button:focus-visible, input:focus-visible {
+  outline: 3px solid var(--color-mustard);
+  outline-offset: 2px;
+}

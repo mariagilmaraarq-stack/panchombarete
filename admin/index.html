@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | PANCHO MBARATE</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="../assets/logo/mascot_logo.png">
+
+  <!-- Tailwind CSS & Custom CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            mustard: {
+              DEFAULT: '#FFB800',
+              hover: '#E5A600',
+              light: '#FFF5D6',
+            },
+            redSport: {
+              DEFAULT: '#E51A24',
+              dark: '#C0141D',
+              light: '#FDE8E9',
+            },
+            coffee: {
+              DEFAULT: '#2A0808',
+              light: '#523030',
+              soft: '#7D5858',
+            },
+            creme: {
+              DEFAULT: '#FFF8ED',
+              dark: '#F5ECD9',
+            }
+          },
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="../css/styles.css">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Supabase JS SDK (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-creme text-coffee min-h-screen">
+
+  <!-- ========================================================================= -->
+  <!-- MODAL / TELA DE LOGIN SUPABASE AUTH -->
+  <!-- ========================================================================= -->
+  <div id="admin-login-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-coffee/80 backdrop-blur-md">
+    <div class="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 card-shadow border border-mustard/30 space-y-6">
+      
+      <div class="text-center space-y-2">
+        <div class="w-16 h-16 mx-auto rounded-full overflow-hidden border-2 border-mustard bg-white shadow-md">
+          <img src="../assets/logo/mascot_logo.png" alt="PANCHO MBARATE" class="w-full h-full object-contain">
+        </div>
+        <h1 class="text-2xl font-black text-coffee tracking-tight">
+          Painel Gestor <span class="text-redSport">Mbarate</span>
+        </h1>
+        <p class="text-xs text-coffee-soft">
+          Acesso restrito para administração de pedidos e financeiro
+        </p>
+      </div>
+
+      <!-- Formulário de Login Auth -->
+      <form id="admin-login-form" class="space-y-4">
+        <div class="space-y-1">
+          <label for="admin-email" class="block text-xs font-black uppercase tracking-wider text-coffee">Usuário ou E-mail</label>
+          <input type="text" id="admin-email" required placeholder="panchombarete" value="panchombarete" class="w-full px-4 py-3 rounded-2xl border-2 border-coffee/15 text-sm font-semibold focus:border-mustard focus:outline-none">
+        </div>
+
+        <div class="space-y-1">
+          <label for="admin-password" class="block text-xs font-black uppercase tracking-wider text-coffee">Senha</label>
+          <input type="password" id="admin-password" required placeholder="••••••••" class="w-full px-4 py-3 rounded-2xl border-2 border-coffee/15 text-sm font-semibold focus:border-mustard focus:outline-none">
+        </div>
+
+        <p id="login-error-msg" class="hidden text-xs font-bold text-redSport"></p>
+
+        <button type="submit" id="btn-login-submit" class="w-full py-3.5 rounded-2xl bg-mustard hover:bg-mustard-hover text-coffee font-black text-sm tracking-wide shadow-md btn-press transition-all">
+          ENTRAR NO PAINEL
+        </button>
+      </form>
+
+      <!-- Modo de Acesso Rápido / Demonstração Local -->
+      <div class="pt-4 border-t border-coffee/10 text-center space-y-2">
+        <p class="text-[11px] text-coffee-soft">
+          Desenvolvimento local ou sem credenciais Supabase configuradas?
+        </p>
+        <button type="button" id="btn-demo-access" class="px-4 py-2 rounded-xl bg-creme hover:bg-mustard-light border border-coffee/15 text-xs font-extrabold text-coffee transition-colors">
+          ⚡ Entrar em Modo Demo Local
+        </button>
+      </div>
+
+      <div class="text-center pt-2">
+        <a href="../" class="text-xs font-bold text-coffee-soft hover:text-coffee">
+          ← Voltar para o Cardápio
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- DASHBOARD PRINCIPAL DO ADMIN -->
+  <!-- ========================================================================= -->
+  <div id="admin-dashboard-container" class="hidden min-h-screen flex flex-col lg:flex-row">
+    
+    <!-- BACKDROP MOBILE PARA A SIDEBAR -->
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-coffee/60 backdrop-blur-sm z-40 hidden lg:hidden"></div>
+
+    <!-- SIDEBAR LATERAL (DESKTOP E GAVETA MOBILE) -->
+    <aside id="admin-sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-coffee/10 flex flex-col transition-transform duration-300 transform -translate-x-full lg:translate-x-0 lg:static lg:z-auto">
+      
+      <!-- Cabeçalho da Sidebar -->
+      <div class="p-5 border-b border-coffee/10 flex items-center justify-between">
+        <a href="/admin/" class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-mustard bg-white shadow-sm flex-shrink-0">
+            <img src="../assets/logo/mascot_logo.png" alt="Logo" class="w-full h-full object-contain">
+          </div>
+          <div>
+            <h2 class="text-sm font-black tracking-tight text-coffee leading-tight">
+              PANCHO <span class="text-redSport">MBARATE</span>
+            </h2>
+            <p class="text-[10px] font-bold text-coffee-soft uppercase tracking-wider">
+              Painel de Gestão
+            </p>
+          </div>
+        </a>
+
+        <!-- Botão Fechar Mobile -->
+        <button type="button" id="btn-close-mobile-sidebar" class="p-2 rounded-xl text-coffee hover:bg-creme lg:hidden" aria-label="Fechar Menu">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Navegação da Sidebar (Links para o painel e módulos) -->
+      <nav class="flex-1 p-4 space-y-1.5 overflow-y-auto text-xs font-extrabold">
+        
+        <div class="px-3 py-2 text-[10px] uppercase font-black tracking-wider text-coffee-soft">
+          Operação & Cardápio
+        </div>
+
+        <a href="#orders" id="nav-item-orders" class="admin-nav-item flex items-center justify-between px-3 py-2.5 rounded-2xl bg-mustard text-coffee shadow-sm font-black transition-all">
+          <div class="flex items-center gap-3">
+            <i data-lucide="clipboard-list" class="w-4 h-4 text-coffee"></i>
+            <span>Pedidos em Tempo Real</span>
+          </div>
+          <span class="nav-active-dot w-2 h-2 rounded-full bg-redSport"></span>
+        </a>
+
+        <a href="#metrics" id="nav-item-metrics" class="admin-nav-item flex items-center justify-between px-3 py-2.5 rounded-2xl text-coffee hover:bg-creme hover:text-coffee transition-all group">
+          <div class="flex items-center gap-3">
+            <i data-lucide="chart-pie" class="w-4 h-4 text-coffee-soft group-hover:text-coffee"></i>
+            <span>Métricas & Vendas</span>
+          </div>
+          <span class="nav-active-dot w-2 h-2 rounded-full bg-redSport hidden"></span>
+        </a>
+
+        <a href="#products" id="nav-item-products" class="admin-nav-item flex items-center justify-between px-3 py-2.5 rounded-2xl text-coffee hover:bg-creme hover:text-coffee transition-all group">
+          <div class="flex items-center gap-3">
+            <i data-lucide="utensils-crossed" class="w-4 h-4 text-coffee-soft group-hover:text-coffee"></i>
+            <span>Catálogo de Produtos</span>
+          </div>
+          <span class="nav-active-dot w-2 h-2 rounded-full bg-redSport hidden"></span>
+        </a>
+
+        <div class="px-3 pt-4 pb-2 text-[10px] uppercase font-black tracking-wider text-coffee-soft">
+          Gestão Financeira & Estratégica
+        </div>
+
+        <!-- Precificação e Custos -->
+        <a href="/admin/precificacao" id="nav-item-pricing" class="admin-nav-item flex items-center justify-between px-3 py-2.5 rounded-2xl text-coffee hover:bg-creme hover:text-coffee transition-all group">
+          <div class="flex items-center gap-3">
+            <i data-lucide="calculator" class="w-4 h-4 text-coffee-soft group-hover:text-coffee"></i>
+            <span>Precificação e Custos</span>
+          </div>
+        </a>
+
+        <!-- Fichas Técnicas & CMV -->
+        <a href="/admin/fichas-tecnicas" id="nav-item-recipes" class="admin-nav-item flex items-center justify-between px-3 py-2.5 rounded-2xl text-coffee hover:bg-creme hover:text-coffee transition-all group">
+          <div class="flex items-center gap-3">
+            <i data-lucide="utensils-crossed" class="w-4 h-4 text-coffee-soft group-hover:text-coffee"></i>
+            <span>Fichas Técnicas & CMV</span>
+          </div>
+          <span class="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-mustard text-coffee uppercase">Novo</span>
+        </a>
+
+        <a href="#settings" id="nav-item-settings" class="admin-nav-item flex items-center justify-between px-3 py-2.5 rounded-2xl text-coffee hover:bg-creme hover:text-coffee transition-all group">
+          <div class="flex items-center gap-3">
+            <i data-lucide="settings" class="w-4 h-4 text-coffee-soft group-hover:text-coffee"></i>
+            <span>Configurações & Loja</span>
+          </div>
+          <span class="nav-active-dot w-2 h-2 rounded-full bg-redSport hidden"></span>
+        </a>
+
+        <div class="pt-4 border-t border-coffee/10 mt-4">
+          <a href="../" target="_blank" class="flex items-center gap-3 px-3 py-2.5 rounded-2xl text-coffee hover:bg-mustard-light transition-all">
+            <i data-lucide="external-link" class="w-4 h-4 text-mustard"></i>
+            <span>Ver Cardápio Público</span>
+          </a>
+        </div>
+
+      </nav>
+
+      <!-- Rodapé da Sidebar (Usuário e Logout) -->
+      <div class="p-4 border-t border-coffee/10 bg-creme/40 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+            <span id="admin-session-badge" class="text-[11px] font-black text-coffee truncate max-w-[140px]">
+              ● Admin Conectado
+            </span>
+          </div>
+          <button type="button" id="btn-admin-logout" class="px-2.5 py-1 rounded-xl bg-redSport-light text-redSport hover:bg-redSport hover:text-white transition-colors text-[10px] font-black" title="Sair da Sessão">
+            Sair
+          </button>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- CONTEÚDO PRINCIPAL (ÁREA DE TRABALHO) -->
+    <div class="flex-1 flex flex-col min-w-0">
+      
+      <!-- TOP BAR RESPONSIVA -->
+      <header class="bg-white border-b border-coffee/10 sticky top-0 z-30 px-4 sm:px-6 py-3.5">
+        <div class="flex items-center justify-between gap-4">
+          
+          <div class="flex items-center gap-3">
+            <button type="button" id="btn-toggle-mobile-sidebar" class="p-2 rounded-xl bg-creme hover:bg-mustard-light border border-coffee/10 text-coffee lg:hidden" aria-label="Abrir Menu Lateral">
+              <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+            <div>
+              <div class="flex items-center gap-2">
+                <h1 id="page-title" class="text-lg sm:text-xl font-black text-coffee tracking-tight leading-none">
+                  Pedidos em Tempo Real
+                </h1>
+                <span id="page-badge" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 hidden sm:inline-block">
+                  Ao Vivo
+                </span>
+              </div>
+              <p id="page-subtitle" class="text-xs text-coffee-soft hidden sm:block pt-0.5">
+                Acompanhe e despache pedidos em tempo real no balcão
+              </p>
+            </div>
+          </div>
+
+          <!-- Ações Rápidas no Topo -->
+          <div class="flex items-center gap-2 sm:gap-3">
+            <a href="../" target="_blank" class="px-3.5 py-2 rounded-2xl bg-creme hover:bg-mustard-light border border-coffee/15 text-xs font-black text-coffee transition-colors flex items-center gap-1.5">
+              <span>Cardápio</span>
+              <i data-lucide="external-link" class="w-3.5 h-3.5 text-mustard"></i>
+            </a>
+
+            <button type="button" id="btn-header-refresh" class="p-2 rounded-2xl bg-creme hover:bg-mustard-light border border-coffee/15 text-coffee transition-colors" title="Atualizar dados">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+        </div>
+      </header>
+
+      <!-- Conteúdo das Seções -->
+      <main class="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+
+      <!-- ===================================================================== -->
+      <!-- ABA 1: PEDIDOS -->
+      <!-- ===================================================================== -->
+      <section id="tab-section-orders" class="space-y-6">
+        
+        <!-- Cards de Destaque Rápido do Dia -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white p-4 rounded-2xl border border-coffee/10 card-shadow space-y-1">
+            <span class="text-[11px] font-extrabold uppercase text-coffee-soft tracking-wider">Pedidos Hoje</span>
+            <div id="stat-today-orders" class="text-2xl font-black text-coffee">0</div>
+            <span class="text-[10px] text-coffee-soft" id="stat-pending-label">0 aguardando</span>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-coffee/10 card-shadow space-y-1">
+            <span class="text-[11px] font-extrabold uppercase text-coffee-soft tracking-wider">Receita Confirmada</span>
+            <div id="stat-confirmed-revenue" class="text-2xl font-black text-emerald-600">0 Gs.</div>
+            <span class="text-[10px] text-coffee-soft">Apenas pedidos CONFIRMADOS</span>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-coffee/10 card-shadow space-y-1">
+            <span class="text-[11px] font-extrabold uppercase text-coffee-soft tracking-wider">CMV Confirmado</span>
+            <div id="stat-confirmed-cmv" class="text-2xl font-black text-coffee-soft">0 Gs.</div>
+            <span class="text-[10px] text-coffee-soft">Custo de mercadoria vendida</span>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-coffee/10 card-shadow space-y-1 bg-gradient-to-br from-white to-mustard-light/40">
+            <span class="text-[11px] font-extrabold uppercase text-coffee tracking-wider">Lucro Estimado</span>
+            <div id="stat-confirmed-profit" class="text-2xl font-black text-redSport">0 Gs.</div>
+            <span class="text-[10px] font-semibold text-coffee-soft">Receita - CMV</span>
+          </div>
+        </div>
+
+        <!-- Filtro e Lista de Pedidos -->
+        <div class="bg-white rounded-3xl p-5 border border-coffee/10 card-shadow space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 class="text-lg font-black text-coffee tracking-tight">Fila de Pedidos</h3>
+              <p class="text-xs text-coffee-soft">Atualize o status dos pedidos conforme o preparo e a retirada</p>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <select id="filter-order-status" class="px-3 py-2 rounded-xl border border-coffee/15 text-xs font-bold text-coffee bg-creme focus:outline-none">
+                <option value="ALL">Todos os status</option>
+                <option value="INICIADO">Iniciado</option>
+                <option value="WHATSAPP_ABERTO">WhatsApp Aberto</option>
+                <option value="CONFIRMADO">Confirmado</option>
+                <option value="RETIRADO">Retirado</option>
+                <option value="CANCELADO">Cancelado</option>
+              </select>
+
+              <button id="btn-refresh-orders" class="p-2 rounded-xl bg-creme hover:bg-mustard-light border border-coffee/15 text-coffee transition-colors" title="Atualizar Pedidos">
+                🔄
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabela de Pedidos -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b border-coffee/10 text-coffee-soft font-black uppercase tracking-wider">
+                  <th class="py-3 px-3">Código</th>
+                  <th class="py-3 px-3">Cliente</th>
+                  <th class="py-3 px-3">Itens</th>
+                  <th class="py-3 px-3">Retirada</th>
+                  <th class="py-3 px-3">Total (Gs.)</th>
+                  <th class="py-3 px-3">CMV</th>
+                  <th class="py-3 px-3">Status</th>
+                  <th class="py-3 px-3">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="orders-table-body" class="divide-y divide-coffee/5 font-medium">
+                <!-- Preenchido dinamicamente -->
+              </tbody>
+            </table>
+          </div>
+
+          <div id="orders-empty-state" class="hidden py-12 text-center text-coffee-soft space-y-2">
+            <span class="text-3xl">🌭</span>
+            <p class="font-bold text-sm">Nenhum pedido encontrado nesta categoria.</p>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- ABA 2: MÉTRICAS & PRODUTOS VENDIDOS -->
+      <!-- ===================================================================== -->
+      <section id="tab-section-metrics" class="hidden space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <!-- Breakdown de Produtos Vendidos -->
+          <div class="bg-white p-6 rounded-3xl border border-coffee/10 card-shadow space-y-4">
+            <h3 class="text-base font-black text-coffee tracking-tight">
+              Ranking de Produtos Vendidos
+            </h3>
+            <div id="products-breakdown-list" class="space-y-3">
+              <!-- Preenchido dinamicamente -->
+            </div>
+          </div>
+
+          <!-- Adicionais mais pedidos -->
+          <div class="bg-white p-6 rounded-3xl border border-coffee/10 card-shadow space-y-4">
+            <h3 class="text-base font-black text-coffee tracking-tight">
+              Adicionais Mais Vendidos
+            </h3>
+            <div id="addons-breakdown-list" class="space-y-3">
+              <!-- Preenchido dinamicamente -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- ABA 3: PRODUTOS (ALIMENTOS E BEBIDAS) -->
+      <!-- ===================================================================== -->
+      <section id="tab-section-products" class="hidden space-y-6">
+        
+        <!-- Cards de Resumo de Produtos -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div class="bg-white p-4 rounded-2xl border border-coffee/10 card-shadow space-y-1">
+            <span class="text-[11px] font-extrabold uppercase text-coffee-soft tracking-wider">Total de Produtos</span>
+            <div id="stat-products-total" class="text-2xl font-black text-coffee">0</div>
+            <span class="text-[10px] text-coffee-soft">Cadastrados no sistema</span>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-coffee/10 card-shadow space-y-1">
+            <span class="text-[11px] font-extrabold uppercase text-coffee-soft tracking-wider">🍔 Alimentos</span>
+            <div id="stat-products-foods" class="text-2xl font-black text-amber-600">0</div>
+            <span class="text-[10px] text-coffee-soft">Panchos, lanches e porções</span>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-coffee/10 card-shadow space-y-1">
+            <span class="text-[11px] font-extrabold uppercase text-coffee-soft tracking-wider">🥤 Bebidas</span>
+            <div id="stat-products-drinks" class="text-2xl font-black text-emerald-600">0</div>
+            <span class="text-[10px] text-coffee-soft">Refrigerantes, águas e sucos</span>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-coffee/10 card-shadow space-y-1 bg-gradient-to-br from-white to-mustard-light/30">
+            <span class="text-[11px] font-extrabold uppercase text-coffee tracking-wider">● Ativos no Cardápio</span>
+            <div id="stat-products-active" class="text-2xl font-black text-coffee">0</div>
+            <span class="text-[10px] text-coffee-soft" id="stat-products-inactive">0 inativo(s)</span>
+          </div>
+        </div>
+
+        <!-- Tabela Principal de Produtos -->
+        <div class="bg-white rounded-3xl p-5 border border-coffee/10 card-shadow space-y-5">
+          
+          <!-- Cabeçalho com Botão Adicionar Produto Destacado -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-coffee/10">
+            <div>
+              <h3 class="text-lg font-black text-coffee tracking-tight">Catálogo de Produtos</h3>
+              <p class="text-xs text-coffee-soft">Cadastre e gerencie alimentos e bebidas vendidos no estabelecimento</p>
+            </div>
+            
+            <button type="button" id="btn-open-add-product" class="px-5 py-3 rounded-2xl bg-mustard hover:bg-mustard-hover text-coffee font-black text-xs sm:text-sm tracking-wide shadow-md btn-press transition-all flex items-center justify-center gap-2 self-start sm:self-auto">
+              <span class="text-lg font-black leading-none">+</span>
+              <span>Adicionar produto</span>
+            </button>
+          </div>
+
+          <!-- Barra de Filtros e Busca -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <!-- Busca -->
+            <div class="relative">
+              <input type="text" id="filter-product-search" placeholder="Buscar por nome ou categoria..." class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-coffee/15 bg-creme/30 text-xs font-bold text-coffee focus:border-mustard focus:outline-none">
+              <span class="absolute left-3 top-2.5 text-xs text-coffee-soft">🔍</span>
+            </div>
+
+            <!-- Filtro de Tipo -->
+            <div>
+              <select id="filter-product-type" class="w-full px-3 py-2.5 rounded-xl border border-coffee/15 text-xs font-bold text-coffee bg-creme/30 focus:border-mustard focus:outline-none">
+                <option value="ALL">Todos os Tipos (Alimentos & Bebidas)</option>
+                <option value="alimento">🍔 Apenas Alimentos</option>
+                <option value="bebida">🥤 Apenas Bebidas</option>
+              </select>
+            </div>
+
+            <!-- Filtro de Categoria -->
+            <div>
+              <select id="filter-product-category" class="w-full px-3 py-2.5 rounded-xl border border-coffee/15 text-xs font-bold text-coffee bg-creme/30 focus:border-mustard focus:outline-none">
+                <option value="ALL">Todas as Categorias</option>
+              </select>
+            </div>
+
+            <!-- Filtro de Status -->
+            <div class="flex items-center gap-2">
+              <select id="filter-product-status" class="w-full px-3 py-2.5 rounded-xl border border-coffee/15 text-xs font-bold text-coffee bg-creme/30 focus:border-mustard focus:outline-none">
+                <option value="ALL">Todos os Status</option>
+                <option value="active">● Apenas Ativos</option>
+                <option value="inactive">○ Apenas Inativos</option>
+              </select>
+
+              <button type="button" id="btn-refresh-products" class="p-2.5 rounded-xl bg-creme hover:bg-mustard-light border border-coffee/15 text-coffee transition-colors flex-shrink-0" title="Atualizar Lista">
+                🔄
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabela de Produtos -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b border-coffee/10 text-coffee-soft font-black uppercase tracking-wider">
+                  <th class="py-3 px-3 w-16">Foto</th>
+                  <th class="py-3 px-3">Produto</th>
+                  <th class="py-3 px-3">Categoria</th>
+                  <th class="py-3 px-3">Tipo</th>
+                  <th class="py-3 px-3">Preço</th>
+                  <th class="py-3 px-3">Status</th>
+                  <th class="py-3 px-3 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="products-table-body" class="divide-y divide-coffee/5 font-medium">
+                <!-- Preenchido dinamicamente via admin.js -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty State Produtos -->
+          <div id="products-empty-state" class="hidden py-14 text-center text-coffee-soft space-y-3">
+            <span class="text-4xl block">🌭</span>
+            <p class="font-black text-sm text-coffee">Nenhum produto encontrado.</p>
+            <p class="text-xs text-coffee-soft">Ajuste os filtros ou adicione seu primeiro produto ao cardápio.</p>
+            <button type="button" id="btn-empty-add-product" class="px-4 py-2 rounded-xl bg-mustard hover:bg-mustard-hover text-coffee font-black text-xs shadow-sm btn-press transition-all inline-flex items-center gap-1.5 mt-2">
+              <span>+ Adicionar produto</span>
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ===================================================================== -->
+      <!-- ABA 4: CONFIGURAÇÕES & SUPABASE -->
+      <!-- ===================================================================== -->
+      <section id="tab-section-settings" class="hidden space-y-6">
+        <div class="max-w-2xl bg-white p-6 rounded-3xl border border-coffee/10 card-shadow space-y-6">
+          <div>
+            <h3 class="text-lg font-black text-coffee tracking-tight">Configurações da Operação</h3>
+            <p class="text-xs text-coffee-soft">WhatsApp, horários e credenciais Supabase</p>
+          </div>
+
+          <form id="settings-form" class="space-y-4 text-xs font-bold text-coffee">
+            <div class="space-y-1">
+              <label class="block uppercase tracking-wider">Número WhatsApp para Pedidos (com DDI do Paraguai)</label>
+              <input type="text" id="setting-whatsapp" placeholder="595983000000" class="w-full px-3 py-2.5 rounded-xl border border-coffee/15 bg-creme/40 focus:border-mustard focus:outline-none">
+              <span class="text-[10px] text-coffee-soft font-normal">Ex: 595983123456 (sem espaços ou traços)</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <label class="block uppercase tracking-wider">Horário Abertura</label>
+                <input type="time" id="setting-opening" value="17:00" class="w-full px-3 py-2.5 rounded-xl border border-coffee/15 bg-creme/40 focus:border-mustard focus:outline-none">
+              </div>
+              <div class="space-y-1">
+                <label class="block uppercase tracking-wider">Horário Fechamento</label>
+                <input type="time" id="setting-closing" value="23:45" class="w-full px-3 py-2.5 rounded-xl border border-coffee/15 bg-creme/40 focus:border-mustard focus:outline-none">
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <label class="block uppercase tracking-wider">Endereço da Loja</label>
+              <input type="text" id="setting-address" placeholder="Julio Cesar Riquelme (F8QH+75H)..." class="w-full px-3 py-2.5 rounded-xl border border-coffee/15 bg-creme/40 focus:border-mustard focus:outline-none">
+            </div>
+
+            <div class="space-y-1">
+              <label class="block uppercase tracking-wider">Link Google Maps</label>
+              <input type="url" id="setting-maps" placeholder="https://maps.google.com/?q=-25.51158425546612,-54.6720151" class="w-full px-3 py-2.5 rounded-xl border border-coffee/15 bg-creme/40 focus:border-mustard focus:outline-none">
+            </div>
+
+            <div class="pt-4 border-t border-coffee/10 space-y-3">
+              <h4 class="text-sm font-black text-coffee uppercase">Conexão Supabase (Opcional se usando .env)</h4>
+              
+              <div class="space-y-1">
+                <label class="block uppercase tracking-wider">Supabase URL</label>
+                <input type="url" id="setting-sb-url" placeholder="https://xyzcompany.supabase.co" class="w-full px-3 py-2.5 rounded-xl border border-coffee/15 bg-creme/40 focus:border-mustard focus:outline-none">
+              </div>
+
+              <div class="space-y-1">
+                <label class="block uppercase tracking-wider">Supabase Anon Key</label>
+                <input type="password" id="setting-sb-key" placeholder="eyJhbGciOi..." class="w-full px-3 py-2.5 rounded-xl border border-coffee/15 bg-creme/40 focus:border-mustard focus:outline-none">
+              </div>
+            </div>
+
+            <div class="pt-2 flex items-center justify-between">
+              <button type="submit" class="px-6 py-3 rounded-2xl bg-mustard hover:bg-mustard-hover text-coffee font-black tracking-wide shadow-md btn-press transition-all">
+                SALVAR CONFIGURAÇÕES
+              </button>
+              <span id="settings-save-feedback" class="hidden text-xs font-bold text-emerald-600">✓ Salvo com sucesso!</span>
+            </div>
+          </form>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- FOOTER ADMIN -->
+    <footer class="mt-auto bg-white border-t border-coffee/10 py-4 px-6 text-center text-xs text-coffee-soft">
+      <p>© 2026 site desenvolvido por <a href="https://gdsdesign.site" target="_blank" rel="noopener noreferrer" class="font-bold text-mustard hover:text-coffee underline transition-colors">GDS Design</a>. Todos os direitos reservados. 'Tudo posso naquele que me fortalece.'</p>
+    </footer>
+
+    </div> <!-- fecha flex-1 flex flex-col min-w-0 -->
+  </div> <!-- fecha admin-dashboard-container -->
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: CADASTRAR / EDITAR PRODUTO -->
+  <!-- ========================================================================= -->
+  <div id="product-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-coffee/80 backdrop-blur-md hidden">
+    <div class="w-full max-w-xl bg-white rounded-3xl p-6 sm:p-8 card-shadow border border-coffee/15 space-y-6 max-h-[92vh] overflow-y-auto">
+      
+      <!-- Cabeçalho do Modal -->
+      <div class="flex items-center justify-between pb-3 border-b border-coffee/10">
+        <div>
+          <h3 id="product-modal-title" class="text-xl font-black text-coffee tracking-tight">Adicionar Produto</h3>
+          <p class="text-xs text-coffee-soft">Cadastre alimentos ou bebidas para serem vendidos no cardápio</p>
+        </div>
+        <button type="button" id="btn-close-product-modal" class="w-8 h-8 rounded-full bg-creme hover:bg-mustard-light text-coffee font-black flex items-center justify-center transition-colors">
+          ✕
+        </button>
+      </div>
+
+      <!-- Formulário do Produto -->
+      <form id="product-form" class="space-y-4 text-xs font-bold text-coffee" novalidate>
+        <input type="hidden" id="product-form-id" value="">
+
+        <!-- Tipo de produto: Alimento ou Bebida -->
+        <div class="space-y-1.5">
+          <label class="block uppercase tracking-wider text-[11px] font-black text-coffee">
+            Tipo de Produto <span class="text-redSport">*</span>
+          </label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex items-center justify-center gap-2.5 p-3 rounded-2xl border-2 border-coffee/15 cursor-pointer has-[:checked]:border-mustard has-[:checked]:bg-mustard-light transition-all">
+              <input type="radio" name="product_type" value="alimento" class="sr-only" checked>
+              <span class="text-xl">🌭</span>
+              <span class="font-black text-sm text-coffee">Alimento</span>
+            </label>
+            <label class="flex items-center justify-center gap-2.5 p-3 rounded-2xl border-2 border-coffee/15 cursor-pointer has-[:checked]:border-mustard has-[:checked]:bg-mustard-light transition-all">
+              <input type="radio" name="product_type" value="bebida" class="sr-only">
+              <span class="text-xl">🥤</span>
+              <span class="font-black text-sm text-coffee">Bebida</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Categoria -->
+        <div class="space-y-1">
+          <label for="product-category" class="block uppercase tracking-wider text-[11px] font-black text-coffee">
+            Categoria <span class="text-redSport">*</span>
+          </label>
+          <select id="product-category" required class="w-full px-4 py-3 rounded-2xl border-2 border-coffee/15 bg-creme/40 focus:border-mustard focus:outline-none text-xs font-bold text-coffee">
+            <!-- Popula dinamicamente -->
+          </select>
+        </div>
+
+        <!-- Nome do Produto -->
+        <div class="space-y-1">
+          <label for="product-name" class="block uppercase tracking-wider text-[11px] font-black text-coffee">
+            Nome do Produto <span class="text-redSport">*</span>
+          </label>
+          <input type="text" id="product-name" required placeholder="Ex: Pancho Especial da Casa" class="w-full px-4 py-3 rounded-2xl border-2 border-coffee/15 bg-creme/40 focus:border-mustard focus:outline-none text-xs font-bold text-coffee">
+        </div>
+
+        <!-- Descrição -->
+        <div class="space-y-1">
+          <label for="product-description" class="block uppercase tracking-wider text-[11px] font-black text-coffee">
+            Descrição do Produto
+          </label>
+          <textarea id="product-description" rows="3" placeholder="Ingredientes, detalhes da receita ou apresentação..." class="w-full px-4 py-2.5 rounded-2xl border-2 border-coffee/15 bg-creme/40 focus:border-mustard focus:outline-none text-xs font-medium text-coffee resize-none leading-relaxed"></textarea>
+        </div>
+
+        <!-- Foto do Produto -->
+        <div class="space-y-2">
+          <label class="block uppercase tracking-wider text-[11px] font-black text-coffee">
+            Foto do Produto
+          </label>
+          <div class="flex flex-col sm:flex-row gap-3 items-start">
+            <div class="relative w-24 h-24 rounded-2xl border-2 border-coffee/15 bg-creme overflow-hidden flex-shrink-0 flex items-center justify-center" id="product-image-preview-box">
+              <img id="product-image-preview" src="" alt="Preview" class="w-full h-full object-cover hidden">
+              <span id="product-image-placeholder" class="text-3xl text-coffee-soft">📷</span>
+            </div>
+            <div class="flex-1 space-y-2 w-full">
+              <input type="text" id="product-image-url" placeholder="URL da foto (ex: assets/images/pancho.jpg ou link da web)" class="w-full px-4 py-2.5 rounded-xl border border-coffee/15 bg-creme/40 focus:border-mustard focus:outline-none text-xs font-semibold">
+              <div class="flex flex-wrap items-center gap-2">
+                <label class="px-3 py-1.5 rounded-xl bg-creme hover:bg-mustard-light border border-coffee/15 text-coffee text-[11px] font-extrabold cursor-pointer transition-colors inline-flex items-center gap-1.5">
+                  <span>📁 Enviar do Computador</span>
+                  <input type="file" id="product-image-file" accept="image/*" class="hidden">
+                </label>
+                <button type="button" id="btn-clear-image" class="px-2.5 py-1.5 rounded-xl text-rose-600 hover:bg-rose-50 text-[11px] font-bold hidden">
+                  ✕ Remover foto
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preços: Normal e Promocional -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label for="product-price" class="block uppercase tracking-wider text-[11px] font-black text-coffee">
+              Preço (Gs.) <span class="text-redSport">*</span>
+            </label>
+            <input type="number" id="product-price" required min="0" step="any" placeholder="Ex: 20000 ou 15000.50" class="w-full px-4 py-3 rounded-2xl border-2 border-coffee/15 bg-creme/40 focus:border-mustard focus:outline-none text-xs font-bold text-coffee">
+            <span class="text-[10px] text-coffee-soft font-normal">Valor de venda em Guaraníes</span>
+          </div>
+
+          <div class="space-y-1">
+            <label for="product-promotional-price" class="block uppercase tracking-wider text-[11px] font-black text-coffee">
+              Preço Promocional (Gs.)
+            </label>
+            <input type="number" id="product-promotional-price" min="0" step="any" placeholder="Opcional (ex: 18000)" class="w-full px-4 py-3 rounded-2xl border-2 border-coffee/15 bg-creme/40 focus:border-mustard focus:outline-none text-xs font-bold text-coffee">
+            <span class="text-[10px] text-coffee-soft font-normal">Deixe em branco se não houver</span>
+          </div>
+        </div>
+
+        <!-- Status: Ativo / Inativo -->
+        <div class="space-y-1.5">
+          <label class="block uppercase tracking-wider text-[11px] font-black text-coffee">
+            Status de Visibilidade <span class="text-redSport">*</span>
+          </label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex items-center gap-2.5 p-3 rounded-2xl border-2 border-coffee/15 cursor-pointer has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50 transition-all">
+              <input type="radio" name="product_status" value="true" class="accent-emerald-600" checked>
+              <div>
+                <span class="block font-black text-xs text-emerald-800">● Ativo</span>
+                <span class="text-[10px] text-coffee-soft font-medium">Visível no cardápio</span>
+              </div>
+            </label>
+            <label class="flex items-center gap-2.5 p-3 rounded-2xl border-2 border-coffee/15 cursor-pointer has-[:checked]:border-slate-400 has-[:checked]:bg-slate-100 transition-all">
+              <input type="radio" name="product_status" value="false" class="accent-slate-600">
+              <div>
+                <span class="block font-black text-xs text-slate-700">○ Inativo</span>
+                <span class="text-[10px] text-coffee-soft font-medium">Oculto do cardápio</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Campos complementares recolhíveis (Destaque, CMV, Salsichas) -->
+        <details class="text-[11px] pt-1">
+          <summary class="cursor-pointer font-bold text-coffee-soft hover:text-coffee select-none">
+            + Mais opções (Destaque, CMV de custo, Salsichas)
+          </summary>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3">
+            <div class="space-y-1">
+              <label for="product-highlight" class="block uppercase tracking-wider text-[10px] font-bold text-coffee">Selo de Destaque</label>
+              <input type="text" id="product-highlight" placeholder="Ex: 🔥 MAIS PEDIDO" class="w-full px-3 py-2 rounded-xl border border-coffee/15 bg-creme/30 text-xs">
+            </div>
+            <div class="space-y-1">
+              <label for="product-cmv" class="block uppercase tracking-wider text-[10px] font-bold text-coffee">CMV Estimado (Gs.)</label>
+              <input type="number" id="product-cmv" min="0" step="any" placeholder="Ex: 8500" class="w-full px-3 py-2 rounded-xl border border-coffee/15 bg-creme/30 text-xs">
+            </div>
+            <div class="space-y-1">
+              <label for="product-sausages" class="block uppercase tracking-wider text-[10px] font-bold text-coffee">Qtd. Salsichas</label>
+              <input type="number" id="product-sausages" min="0" value="1" class="w-full px-3 py-2 rounded-xl border border-coffee/15 bg-creme/30 text-xs">
+            </div>
+          </div>
+        </details>
+
+        <!-- Mensagem de Erro de Validação -->
+        <div id="product-form-error" class="hidden p-3 rounded-2xl bg-rose-50 border border-rose-200 text-xs font-bold text-rose-700"></div>
+
+        <!-- Botões de Ação do Modal -->
+        <div class="pt-4 border-t border-coffee/10 flex items-center justify-end gap-3">
+          <button type="button" id="btn-cancel-product-modal" class="px-5 py-3 rounded-2xl bg-creme hover:bg-coffee/5 text-coffee font-extrabold text-xs transition-colors">
+            Cancelar
+          </button>
+          <button type="submit" id="btn-save-product-submit" class="px-6 py-3 rounded-2xl bg-mustard hover:bg-mustard-hover text-coffee font-black text-xs tracking-wide shadow-md btn-press transition-all flex items-center gap-1.5">
+            <span>Salvar Produto</span>
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: CONFIRMAR EXCLUSÃO DE PRODUTO -->
+  <!-- ========================================================================= -->
+  <div id="product-delete-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-coffee/80 backdrop-blur-md hidden">
+    <div class="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 card-shadow border border-coffee/15 space-y-4 text-center">
+      <div class="w-14 h-14 mx-auto rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-2xl">
+        🗑️
+      </div>
+      <div class="space-y-1">
+        <h4 class="text-lg font-black text-coffee">Tem certeza que deseja excluir este produto?</h4>
+        <p id="delete-modal-product-name" class="text-xs text-coffee-soft font-bold"></p>
+      </div>
+
+      <!-- Alerta dinâmico se houver histórico de pedidos -->
+      <div id="delete-modal-warning" class="hidden text-[11px] p-3 rounded-2xl bg-amber-50 text-amber-900 border border-amber-200 text-left font-semibold space-y-1">
+        <span class="font-black text-amber-950 block">⚠️ Produto vinculado a pedidos</span>
+        <p>Este produto possui registros no histórico de pedidos. Para não quebrar o histórico nem os relatórios financeiros, ele será <strong>marcado como Inativo</strong> no cardápio.</p>
+      </div>
+
+      <div class="pt-3 flex items-center justify-center gap-3">
+        <button type="button" id="btn-cancel-delete" class="px-5 py-2.5 rounded-2xl bg-creme hover:bg-coffee/5 text-coffee font-extrabold text-xs transition-colors">
+          Cancelar
+        </button>
+        <button type="button" id="btn-confirm-delete" class="px-5 py-2.5 rounded-2xl bg-redSport hover:bg-redSport-dark text-white font-black text-xs shadow-md btn-press transition-colors">
+          Confirmar Exclusão
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- TOAST NOTIFICATION FLUTUANTE -->
+  <!-- ========================================================================= -->
+  <div id="admin-toast" class="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-xl font-black text-xs flex items-center gap-2 transform transition-all duration-300 translate-y-20 opacity-0 pointer-events-none bg-coffee text-white border border-mustard">
+    <span id="toast-icon">✓</span>
+    <span id="toast-message">Operação realizada com sucesso!</span>
+  </div>
+
+  <!-- SCRIPT ADMIN ES6 -->
+  <script type="module" src="../js/admin.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  
+  <!-- SEO Essencial -->
+  <title>Pancho Mbarate | Cardápio Digital & Pedidos em Ciudad del Este</title>
+  <meta name="description" content="Peça seu Pancho Mbarate em Ciudad del Este. Monte seu pedido com adicionais e bebidas geladas, envie pelo WhatsApp e retire quentinho sem fila.">
+  <meta name="author" content="PANCHO MBARATE">
+  <meta name="theme-color" content="#FFB800">
+  
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Pancho Mbarate | O Autêntico Pancho de Fronteira">
+  <meta property="og:description" content="Monte seu pancho artesanal com até 3 salsichas e bebidas geladas, retire no balcão sem fila.">
+  <meta property="og:image" content="assets/logo/mascot_logo.png">
+  
+  <!-- Favicon com o Logo Oficial -->
+  <link rel="icon" type="image/png" href="assets/logo/mascot_logo.png">
+  <link rel="apple-touch-icon" href="assets/logo/mascot_logo.png">
+
+  <!-- Tailwind CSS & Custom Design Tokens -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            mustard: {
+              DEFAULT: '#FFB800',
+              hover: '#E5A600',
+              light: '#FFF5D6',
+            },
+            redSport: {
+              DEFAULT: '#E51A24',
+              dark: '#C0141D',
+              light: '#FDE8E9',
+            },
+            coffee: {
+              DEFAULT: '#2A0808',
+              light: '#523030',
+              soft: '#7D5858',
+            },
+            creme: {
+              DEFAULT: '#FFF8ED',
+              dark: '#F5ECD9',
+              card: '#FFFFFF',
+            },
+            whatsapp: {
+              DEFAULT: '#25D366',
+              dark: '#1EBE5D',
+            }
+          },
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Supabase JS SDK (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body class="bg-creme text-coffee antialiased selection:bg-mustard selection:text-coffee">
+
+  <!-- ========================================================================= -->
+  <!-- HEADER AMARELO COM LOGO DIRETA E ALINHAMENTO EQUILIBRADO -->
+  <!-- ========================================================================= -->
+  <header id="main-header" class="relative z-40 topbar-yellow shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-20 sm:h-24 flex items-center justify-between gap-4">
+      
+      <!-- Logo à esquerda: Diretamente sobre o amarelo, sem círculo, com sombra elegante -->
+      <a href="#" class="header-logo-link focus:outline-none" title="PANCHO MBARATE — Início">
+        <img src="assets/logo/mascot_logo.png" alt="Logo Oficial Pancho Mbarate" class="header-logo-img">
+      </a>
+
+      <!-- Menu de Navegação Central (Desktop) -->
+      <nav class="hidden md:flex items-center gap-6 lg:gap-8 text-xs lg:text-sm font-black text-coffee uppercase tracking-wider">
+        <a href="#cardapio" class="hover:text-redSport transition-colors">Cardápio</a>
+        <a href="#adicionais-section" class="hover:text-redSport transition-colors">Adicionais</a>
+        <a href="#bebidas-section" class="hover:text-redSport transition-colors">Bebidas</a>
+        <a href="#localizacao" class="hover:text-redSport transition-colors">Onde Estamos</a>
+      </nav>
+
+      <!-- Ações no Topbar: Status + Pedir + Admin perfeitamente alinhados -->
+      <div class="flex items-center gap-2.5 sm:gap-3">
+        
+        <!-- Status Dinâmico -->
+        <div id="store-status-badge" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide shadow-sm bg-emerald-600 text-white whitespace-nowrap" aria-live="polite">
+          <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+          <span id="store-status-text">ABERTO</span>
+        </div>
+
+        <!-- Botão Ação Pílula Vermelha -->
+        <button id="topbar-order-btn" type="button" class="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-redSport hover:bg-redSport-dark text-white font-black text-xs tracking-wide shadow-sm btn-press transition-colors whitespace-nowrap">
+          <span>Pedir Agora</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+          </svg>
+        </button>
+
+        <!-- Link Admin -->
+        <a href="admin/" class="p-2 rounded-xl bg-white/40 hover:bg-white text-coffee transition-colors text-xs font-bold flex items-center justify-center flex-shrink-0" title="Painel Admin">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+        </a>
+
+      </div>
+
+    </div>
+  </header>
+
+  <!-- AVISO QUANDO A LOJA ESTÁ FECHADA (POSICIONADO PARA NÃO SOBREPOR A LOGO NO MOBILE) -->
+  <div id="store-closed-banner" class="hidden w-full bg-amber-600 text-white text-xs sm:text-sm font-semibold py-2.5 shadow-inner relative z-30 closed-banner-content">
+    <div class="max-w-6xl mx-auto flex items-center justify-start sm:justify-center gap-2 text-left sm:text-center">
+      <span class="flex-shrink-0">⚠️</span>
+      <span>Atenção: Estamos temporariamente fora do horário de atendimento. O balcão reabre às <span id="closed-reopen-time" class="font-bold underline">17:00</span>.</span>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- HERO BANNER VERMELHO 100% FULL-WIDTH: PREENCHE TODA A JANELA ATÉ O MENU -->
+  <!-- ========================================================================= -->
+  <section id="hero-banner" class="relative w-full bg-redSport text-white shadow-xl z-20">
+    
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14 md:py-16">
+      
+      <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12">
+        
+        <!-- Textos do Banner (Esquerda) -->
+        <div class="flex-1 text-center md:text-left space-y-4">
+          
+          <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.08]">
+            Peça Seus Favoritos<br>
+            <span class="text-mustard">em Minutos.</span>
+          </h1>
+
+          <p class="text-white/90 text-sm sm:text-base font-medium max-w-md leading-relaxed mx-auto md:mx-0">
+            Pão artesanal quentinho, queijo derretido, até 3 salsichas de primeira linha e bebidas geladas prontas para retirar sem fila.
+          </p>
+
+          <div class="pt-3">
+            <a href="#cardapio" class="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-mustard hover:bg-mustard-hover text-coffee font-black text-sm sm:text-base tracking-wide shadow-xl btn-press transition-all">
+              <span>ESCOLHER AGORA</span>
+              <svg class="w-4 h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+              </svg>
+            </a>
+          </div>
+
+        </div>
+
+        <!-- Mega Pancho de Estúdio no Fundo Vermelho (Direita) -->
+        <div class="w-full md:w-[48%] relative flex items-center justify-center">
+          <div class="relative w-full max-w-md aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 transform hover:scale-105 transition-transform duration-300">
+            <img src="assets/images/hero_pancho.jpg" alt="Pancho Mbarate Campeão" class="w-full h-full object-cover">
+            
+            <div class="absolute bottom-3 left-3 bg-coffee/85 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-black text-mustard border border-mustard/40 shadow-lg">
+              🌭 Duplo com Queijo Derretido & Batata Palha
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Triângulo apontador inferior estilo imagem 2 -->
+    <div class="banner-triangle-pointer"></div>
+
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- CONTEÚDO PRINCIPAL (PASSA DIRETAMENTE PARA O CARDÁPIO OFICIAL) -->
+  <!-- ========================================================================= -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 pt-10 md:pt-14 space-y-12 md:space-y-16">
+
+    <!-- ========================================================================= -->
+    <!-- CARDÁPIO OFICIAL / MENU DO SITE (CARDS NO ESTILO EXATO DA REFERÊNCIA) -->
+    <!-- ========================================================================= -->
+    <section id="cardapio" class="space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-coffee/10 pb-4">
+        <div>
+          <span class="text-xs font-black tracking-widest text-redSport uppercase">Cardápio Oficial</span>
+          <h2 class="text-2xl sm:text-3xl font-black text-coffee tracking-tight">
+            NOSSOS PANCHOS
+          </h2>
+          <p class="text-xs sm:text-sm text-coffee-soft">
+            Monte com a quantidade desejada e adicione extras ao seu gosto.
+          </p>
+        </div>
+        <span class="text-xs font-bold text-coffee-soft bg-white px-3 py-1.5 rounded-full border border-coffee/10 self-start sm:self-auto shadow-sm">
+          Escolha e ajuste a quantidade (+/-)
+        </span>
+      </div>
+
+      <!-- Grid de Produtos Oficiais com Estilo da Imagem 2 -->
+      <div id="products-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Renderizado dinamicamente via JS -->
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- SEÇÃO ADICIONAIS -->
+    <!-- ========================================================================= -->
+    <section id="adicionais-section" class="space-y-4">
+      <div class="flex items-center justify-between border-b border-coffee/10 pb-3">
+        <div>
+          <span class="text-xs font-black tracking-widest text-mustard-hover uppercase">Passo 02 • Turbinar</span>
+          <h3 class="text-xl sm:text-2xl font-black text-coffee tracking-tight flex items-center gap-2">
+            QUER TURBINAR SEU PANCHO? <span>🧀</span>
+          </h3>
+        </div>
+        <span class="text-xs font-bold text-coffee-soft bg-white px-3 py-1 rounded-full border border-coffee/10">Opcional</span>
+      </div>
+
+      <!-- Lista de Adicionais Oficiais -->
+      <div id="addons-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Renderizado dinamicamente via JS -->
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- SEÇÃO BEBIDAS GELADAS -->
+    <!-- ========================================================================= -->
+    <section id="bebidas-section" class="space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-1 border-b border-coffee/10 pb-3">
+        <div>
+          <span class="text-xs font-black tracking-widest text-emerald-600 uppercase">Passo 03 • Bebidas</span>
+          <h3 class="text-xl sm:text-2xl font-black text-coffee tracking-tight flex items-center gap-2">
+            BEBIDAS BEM GELADAS PARA ACOMPANHAR <span>🥤</span>
+          </h3>
+          <p class="text-xs sm:text-sm text-coffee-soft">
+            Refrigerantes em lata trincando de geladas e água mineral.
+          </p>
+        </div>
+        <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 self-start sm:self-auto">
+          ❄️ Trincando de gelada
+        </span>
+      </div>
+
+      <div id="drinks-container" class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+        <!-- Renderizado dinamicamente via JS -->
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- SEÇÃO LOCALIZAÇÃO & MINI-MAPA CENTRALIZADO -->
+    <!-- ========================================================================= -->
+    <section id="localizacao" class="max-w-4xl mx-auto w-full pt-4">
+      <div class="rounded-[2.5rem] bg-white p-6 sm:p-10 border border-coffee/10 card-shadow space-y-6">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="text-center sm:text-left">
+            <span class="text-xs font-black tracking-widest text-redSport uppercase">Ponto de Retirada Oficial</span>
+            <h3 class="text-2xl sm:text-3xl font-black text-coffee tracking-tight flex items-center justify-center sm:justify-start gap-2">
+              Retire Sem Fila no Balcão <span>📍</span>
+            </h3>
+            <p id="store-address-display" class="text-xs sm:text-sm text-coffee-light mt-1 font-medium">
+              Julio Cesar Riquelme (F8QH+75H) — Ciudad del Este 100169, Paraguay
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-center sm:justify-end gap-2.5">
+            <a id="btn-google-maps" href="https://maps.google.com/?q=-25.51158425546612,-54.6720151" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-mustard hover:bg-mustard-hover text-coffee font-black text-xs sm:text-sm btn-press transition-colors shadow-sm">
+              <span>Google Maps 🗺️</span>
+            </a>
+            <a href="https://www.waze.com/ul?ll=-25.51158425546612,-54.6720151&navigate=yes" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-creme hover:bg-mustard-light border border-coffee/15 text-coffee font-black text-xs sm:text-sm btn-press transition-colors">
+              <span>Waze 🚗</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Mini-Mapa Interativo Centralizado -->
+        <div class="relative w-full rounded-3xl overflow-hidden border-2 border-coffee/10 shadow-md bg-creme-dark">
+          <div class="absolute top-3 left-3 z-10 px-3.5 py-1.5 rounded-full bg-coffee/90 backdrop-blur-md text-white text-xs font-black shadow-md flex items-center gap-2 border border-mustard/40">
+            <span class="w-2 h-2 rounded-full bg-redSport animate-ping"></span>
+            <span>Balcão PANCHO MBARATE • Ciudad del Este</span>
+          </div>
+
+          <iframe 
+            id="embedded-map-frame"
+            src="https://maps.google.com/maps?q=-25.51158425546612,-54.6720151&t=&z=16&ie=UTF8&iwloc=&output=embed" 
+            width="100%" 
+            height="320" 
+            style="border:0;" 
+            allowfullscreen="" 
+            loading="lazy" 
+            referrerpolicy="no-referrer-when-downgrade"
+            title="Localização Pancho Mbarate"
+            class="w-full h-72 sm:h-80 filter contrast-[1.05]">
+          </iframe>
+
+          <div class="bg-creme px-5 py-3 border-t border-coffee/10 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-bold text-coffee">
+            <span>🕒 Horário de Retirada: 17:00 às 23:45</span>
+            <span class="text-coffee-soft">📍 Julio Cesar Riquelme • Retirada Rápida</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- RODAPÉ ORGANIZADO 4 COLUNAS (LAYOUT INSPIRADO NA REFERÊNCIA COM DESIGN PANCHO MBARATE) -->
+  <!-- ========================================================================= -->
+  <footer class="mt-16 bg-coffee text-white pt-12 pb-8 px-4 sm:px-6 border-t-4 border-mustard">
+    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 pb-10 border-b border-white/10">
+      
+      <!-- Coluna 1: Marca, Sobre e Redes Sociais -->
+      <div class="space-y-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full overflow-hidden bg-white p-0.5 border border-mustard shadow-md flex-shrink-0">
+            <img src="assets/logo/mascot_logo.png" alt="Logo Pancho Mbarate" class="w-full h-full object-contain">
+          </div>
+          <span class="font-black text-white text-xl tracking-tight leading-none">
+            PANCHO <span class="text-redSport">MBARATE</span>
+          </span>
+        </div>
+        <p class="text-xs text-white/75 leading-relaxed">
+          O autêntico pancho com sabor de verdade na Tríplice Fronteira. Pão quentinho, queijo derretido, molhos artesanais e até 3 salsichas de primeira linha.
+        </p>
+        
+        <!-- Ícones Sociais (Instagram para você inserir seu link + WhatsApp) -->
+        <div class="flex items-center gap-3 pt-1">
+          <!-- Ícone Instagram: Insira seu link de direcionamento no href ou deixe dinâmico -->
+          <a id="footer-instagram" href="https://instagram.com/panchombarate" target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-full bg-white/10 hover:bg-mustard hover:text-coffee text-white flex items-center justify-center transition-all duration-200 border border-white/15 hover:scale-105 shadow-sm" title="Instagram (Clique para acessar ou edite com seu link)">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+            </svg>
+          </a>
+          <!-- Ícone WhatsApp -->
+          <a href="https://wa.me/595983000000" target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-full bg-white/10 hover:bg-whatsapp hover:text-white text-white flex items-center justify-center transition-all duration-200 border border-white/15 hover:scale-105 shadow-sm" title="Fale conosco no WhatsApp">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.299.144.347.491 1.2.534 1.288.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.179.182-.077.357.101.174.45 0.742.966 1.202.664.591 1.224.774 1.398.861.173.087.275.072.376-.043.101-.116.433-.506.549-.679.116-.174.231-.145.39-.087s1.011.477 1.184.564c.173.087.289.13.332.202.044.073.044.42-.1 0.825z"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Coluna 2: Links Rápidos -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-black uppercase tracking-wider text-mustard">
+          Links Rápidos
+        </h4>
+        <ul class="space-y-2 text-xs font-semibold text-white/80">
+          <li><a href="#cardapio" class="hover:text-mustard transition-colors flex items-center gap-1.5"><span>🌭</span> Cardápio Oficial</a></li>
+          <li><a href="#adicionais-section" class="hover:text-mustard transition-colors flex items-center gap-1.5"><span>🧀</span> Adicionais Especiais</a></li>
+          <li><a href="#bebidas-section" class="hover:text-mustard transition-colors flex items-center gap-1.5"><span>🥤</span> Bebidas Geladas</a></li>
+          <li><a href="#localizacao" class="hover:text-mustard transition-colors flex items-center gap-1.5"><span>📍</span> Onde Estamos</a></li>
+          <li><a href="admin/" class="hover:text-mustard transition-colors flex items-center gap-1.5 text-white/60 hover:text-white"><span>🔒</span> Painel Administrativo</a></li>
+        </ul>
+      </div>
+
+      <!-- Coluna 3: Horário de Atendimento -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-black uppercase tracking-wider text-mustard">
+          Horário de Atendimento
+        </h4>
+        <div class="space-y-2 text-xs text-white/80 font-medium">
+          <div class="flex justify-between items-center border-b border-white/5 pb-1.5">
+            <span>Terça a Domingo</span>
+            <span class="font-bold text-white">17:00 – 23:45</span>
+          </div>
+          <div class="flex justify-between items-center border-b border-white/5 pb-1.5">
+            <span>Segunda-feira</span>
+            <span class="font-bold text-redSport">Fechado</span>
+          </div>
+          <p class="text-[11px] text-white/60 pt-1 leading-relaxed">
+            🛵 Retirada no balcão a apenas 5 min da Ponte da Amizade em CDE.
+          </p>
+        </div>
+      </div>
+
+      <!-- Coluna 4: Localização (Mini Mapa) -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-black uppercase tracking-wider text-mustard">
+          Localização
+        </h4>
+        <div class="relative w-full h-28 rounded-2xl overflow-hidden border border-white/15 shadow-sm bg-black/40">
+          <iframe 
+            src="https://maps.google.com/maps?q=-25.51158425546612,-54.6720151&t=&z=15&ie=UTF8&iwloc=&output=embed" 
+            width="100%" 
+            height="100%" 
+            style="border:0;" 
+            loading="lazy"
+            title="Mini Mapa Pancho Mbarate"
+            class="w-full h-full filter contrast-125">
+          </iframe>
+        </div>
+        <div class="text-[11px] text-white/70 flex items-center justify-between">
+          <span>Julio Cesar Riquelme • CDE</span>
+          <a href="https://maps.google.com/?q=-25.51158425546612,-54.6720151" target="_blank" rel="noopener noreferrer" class="text-mustard font-bold hover:underline inline-flex items-center gap-1">
+            <span>Abrir Maps</span>
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Linha Inferior: Direitos Autorais e Assinatura GDS Design -->
+    <div class="max-w-6xl mx-auto pt-6 text-center text-[11px] sm:text-xs text-white/60">
+      <p>© 2026 site desenvolvido por <a href="https://gdsdesign.site" target="_blank" rel="noopener noreferrer" class="font-bold text-mustard hover:text-white underline transition-colors">GDS Design</a>. Todos os direitos reservados. 'Tudo posso naquele que me fortalece.'</p>
+    </div>
+  </footer>
+
+  <!-- ========================================================================= -->
+  <!-- BARRA FIXA DE CARRINHO MOBILE & DESKTOP (ALINHADA EM LINHA ÚNICA) -->
+  <!-- ========================================================================= -->
+  <div id="sticky-bottom-bar" class="fixed bottom-0 left-0 right-0 z-50 mobile-cart-bar px-4 py-3 transform translate-y-full transition-transform duration-300 ease-out">
+    <div class="max-w-6xl mx-auto flex items-center justify-between gap-3 sm:gap-4">
+      
+      <!-- Preço e resumo à esquerda -->
+      <div class="flex flex-col cursor-pointer flex-shrink-0" id="bar-summary-trigger">
+        <span id="bottom-bar-item-count" class="text-xs font-bold text-creme-dark flex items-center gap-1.5 whitespace-nowrap">
+          <span>🌭</span> 1 Pancho selecionado
+        </span>
+        <span id="bottom-bar-total" class="text-lg md:text-xl font-black text-mustard tracking-tight leading-tight">
+          0 Gs.
+        </span>
+      </div>
+
+      <!-- Botão Ação WhatsApp à direita -->
+      <button id="btn-open-checkout" type="button" class="flex-1 max-w-xs sm:max-w-sm flex items-center justify-center gap-2 px-5 py-3.5 rounded-full bg-whatsapp hover:bg-whatsapp-dark text-white font-black text-sm md:text-base tracking-wide shadow-lg btn-press transition-all whitespace-nowrap">
+        <span>PEDIR NO WHATSAPP</span>
+        <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.299.144.347.491 1.2.534 1.288.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.179.182-.077.357.101.174.45 0.742.966 1.202.664.591 1.224.774 1.398.861.173.087.275.072.376-.043.101-.116.433-.506.549-.679.116-.174.231-.145.39-.087s1.011.477 1.184.564c.173.087.289.13.332.202.044.073.044.42-.1 0.825z"/>
+        </svg>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL / DRAWER DE CHECKOUT RÁPIDO -->
+  <!-- ========================================================================= -->
+  <div id="checkout-modal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    
+    <div class="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-mustard/30 max-h-[92vh] flex flex-col overflow-hidden animate-slide-up">
+      
+      <!-- Cabeçalho do Drawer -->
+      <div class="px-6 py-4 bg-creme border-b border-coffee/10 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <img src="assets/logo/mascot_logo.png" alt="Logo" class="w-9 h-9 object-contain drop-shadow-sm">
+          <div>
+            <h3 id="modal-title" class="text-lg font-black text-coffee tracking-tight">
+              Partiu retirar? 🔥
+            </h3>
+            <p class="text-xs text-coffee-soft">Revise seu pedido completo e confirme no WhatsApp</p>
+          </div>
+        </div>
+        <button id="btn-close-modal" type="button" class="p-2 rounded-full hover:bg-mustard-light text-coffee text-lg font-black focus:outline-none" aria-label="Fechar">
+          ✕
+        </button>
+      </div>
+
+      <!-- Corpo com Rolagem -->
+      <div class="p-6 overflow-y-auto space-y-6">
+
+        <!-- 1. Nome do Cliente -->
+        <div class="space-y-1.5">
+          <label for="customer-name-input" class="block text-xs font-black uppercase tracking-wider text-coffee">
+            Seu Nome <span class="text-redSport">*</span>
+          </label>
+          <input type="text" id="customer-name-input" placeholder="Ex: Carlos, Maria..." maxlength="50" autocomplete="name" required class="w-full px-4 py-3 rounded-2xl border-2 border-coffee/15 bg-creme/50 text-coffee font-bold text-sm focus:border-mustard focus:bg-white focus:outline-none transition-colors">
+          <p id="name-error-msg" class="hidden text-xs font-bold text-redSport">Por favor, informe seu nome para a retirada.</p>
+        </div>
+
+        <!-- 2. Quando vai retirar? (Opções Rápidas) -->
+        <div class="space-y-2">
+          <label class="block text-xs font-black uppercase tracking-wider text-coffee">
+            Quando vai retirar? ⏱️
+          </label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="pickup-time-chips">
+            <button type="button" data-time="Agora" class="pickup-chip px-3 py-2.5 rounded-xl border-2 border-coffee/10 text-xs font-bold text-coffee text-center hover:border-mustard transition-colors">
+              Agora
+            </button>
+            <button type="button" data-time="10–15 min" class="pickup-chip is-active px-3 py-2.5 rounded-xl border-2 border-mustard bg-mustard-light text-xs font-black text-coffee text-center transition-colors">
+              10–15 min
+            </button>
+            <button type="button" data-time="20–30 min" class="pickup-chip px-3 py-2.5 rounded-xl border-2 border-coffee/10 text-xs font-bold text-coffee text-center hover:border-mustard transition-colors">
+              20–30 min
+            </button>
+            <button type="button" data-time="30–45 min" class="pickup-chip px-3 py-2.5 rounded-xl border-2 border-coffee/10 text-xs font-bold text-coffee text-center hover:border-mustard transition-colors">
+              30–45 min
+            </button>
+          </div>
+          
+          <div class="pt-1">
+            <input type="text" id="custom-time-input" placeholder="Ou digite um horário específico (ex: 20:30)" class="w-full px-3 py-2 rounded-xl border border-coffee/15 bg-creme/30 text-xs font-semibold text-coffee focus:border-mustard focus:outline-none">
+          </div>
+        </div>
+
+        <!-- 3. RESUMO DO PEDIDO -->
+        <div class="rounded-2xl bg-creme border border-mustard/30 p-4 space-y-3">
+          <span class="text-xs font-black tracking-widest text-coffee-soft uppercase block border-b border-coffee/10 pb-2">
+            SEU PEDIDO
+          </span>
+          
+          <!-- Panchos Selecionados com suporte a múltiplos itens -->
+          <div id="summary-products-wrapper" class="space-y-2.5 divide-y divide-coffee/5">
+            <div class="flex items-center justify-between gap-3 pt-1">
+              <div class="flex-1">
+                <h4 id="summary-product-name" class="font-black text-sm text-coffee">
+                  Nenhum pancho selecionado
+                </h4>
+                <p id="summary-product-desc" class="text-xs text-coffee-soft">
+                  Selecione um pancho no cardápio
+                </p>
+              </div>
+
+              <div id="summary-qty-stepper" class="flex items-center gap-2 bg-white px-2 py-1 rounded-xl border border-coffee/15 shadow-sm">
+                <button type="button" id="summary-btn-minus" class="w-6 h-6 rounded-lg bg-creme hover:bg-mustard-light text-coffee font-black text-xs flex items-center justify-center">-</button>
+                <span id="summary-product-qty" class="font-black text-xs text-coffee px-1">1</span>
+                <button type="button" id="summary-btn-plus" class="w-6 h-6 rounded-lg bg-creme hover:bg-mustard-light text-coffee font-black text-xs flex items-center justify-center">+</button>
+              </div>
+
+              <span id="summary-product-price" class="font-black text-sm text-coffee flex-shrink-0 text-right">
+                0 Gs.
+              </span>
+            </div>
+          </div>
+
+          <!-- Adicionais -->
+          <div id="summary-addons-wrapper" class="space-y-1.5 pt-2 border-t border-coffee/10">
+          </div>
+
+          <!-- Bebidas -->
+          <div id="summary-drinks-wrapper" class="space-y-1.5 pt-2 border-t border-coffee/10">
+          </div>
+
+          <!-- Total Final -->
+          <div class="pt-3 border-t-2 border-dashed border-coffee/20 flex items-center justify-between">
+            <span class="text-sm font-black text-coffee">TOTAL A PAGAR NA RETIRADA</span>
+            <span id="summary-total-price" class="text-xl font-black text-redSport">
+              0 Gs.
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Rodapé do Modal -->
+      <div class="p-4 sm:p-6 bg-white border-t border-coffee/10 space-y-2">
+        <button id="btn-confirm-whatsapp" type="button" class="w-full flex items-center justify-center gap-2 py-4 rounded-full bg-whatsapp hover:bg-whatsapp-dark text-white font-black text-base tracking-wide shadow-lg btn-press transition-all">
+          <span>PEDIR NO WHATSAPP</span>
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.299.144.347.491 1.2.534 1.288.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.179.182-.077.357.101.174.45 0.742.966 1.202.664.591 1.224.774 1.398.861.173.087.275.072.376-.043.101-.116.433-.506.549-.679.116-.174.231-.145.39-.087s1.011.477 1.184.564c.173.087.289.13.332.202.044.073.044.42-.1 0.825z"/>
+          </svg>
+        </button>
+        <p class="text-[11px] text-center text-coffee-soft">
+          Pagamento na retirada (Dinheiro, PIX ou Cartão no balcão).
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SCRIPT PRINCIPAL ES6 -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
