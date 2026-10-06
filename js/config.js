@@ -14,8 +14,9 @@ export const APP_CONFIG = {
   STORE_NAME: 'PANCHO MBARATE',
   
   // Supabase Configuration
-  SUPABASE_URL: getEnv('SUPABASE_URL'),
-  SUPABASE_ANON_KEY: getEnv('SUPABASE_ANON_KEY'),
+  SUPABASE_URL: getEnv('SUPABASE_URL') || 'https://vhhjbqkwvkktuahkqiwj.supabase.co',
+  SUPABASE_ANON_KEY: getEnv('SUPABASE_ANON_KEY') || getEnv('SUPABASE_PUBLISHABLE_KEY'),
+  SUPABASE_PUBLISHABLE_KEY: getEnv('SUPABASE_PUBLISHABLE_KEY') || getEnv('SUPABASE_ANON_KEY'),
   
   // WhatsApp oficial para recebimento de pedidos
   WHATSAPP_NUMBER: getEnv('WHATSAPP_NUMBER') || '595983123456',
@@ -37,7 +38,8 @@ export const APP_CONFIG = {
 /**
  * Retorna o status de abertura da loja em tempo real (Fuso PY: America/Asuncion)
  */
-export function getStoreStatus(customOpening = APP_CONFIG.OPENING_TIME, customClosing = APP_CONFIG.CLOSING_TIME) {
+export function getStoreStatus(customOpening = APP_CONFIG.OPENING_TIME, customClosing = APP_CONFIG.CLOSING_TIME, lang = null) {
+  const currentLang = lang || (typeof window !== 'undefined' && localStorage.getItem('pm_lang')) || 'es';
   try {
     const now = new Date();
     // Obter hora local em Assunção/CDE
@@ -66,12 +68,16 @@ export function getStoreStatus(customOpening = APP_CONFIG.OPENING_TIME, customCl
       isOpen = currentTotalMinutes >= openTotalMinutes || currentTotalMinutes <= closeTotalMinutes;
     }
 
+    const badgeText = currentLang === 'es'
+      ? (isOpen ? 'ABIERTO PARA RETIRO' : `CERRADO — abre a las ${customOpening}`)
+      : (isOpen ? 'ABERTO PARA RETIRADA' : `FECHADO — abre às ${customOpening}`);
+
     return {
       isOpen,
       currentTimePy: pyTimeString,
       openingTime: customOpening,
       closingTime: customClosing,
-      statusBadgeText: isOpen ? 'ABERTO PARA RETIRADA' : `FECHADO — abre às ${customOpening}`,
+      statusBadgeText: badgeText,
       statusClass: isOpen ? 'bg-emerald-500 text-white' : 'bg-amber-600 text-white'
     };
   } catch (e) {
@@ -80,7 +86,7 @@ export function getStoreStatus(customOpening = APP_CONFIG.OPENING_TIME, customCl
       isOpen: true,
       openingTime: customOpening,
       closingTime: customClosing,
-      statusBadgeText: 'ABERTO PARA RETIRADA',
+      statusBadgeText: currentLang === 'es' ? 'ABIERTO PARA RETIRO' : 'ABERTO PARA RETIRADA',
       statusClass: 'bg-emerald-500 text-white'
     };
   }

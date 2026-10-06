@@ -6,15 +6,30 @@ import { APP_CONFIG } from './config.js';
 
 let supabaseClient = null;
 
+export function resetSupabaseClient() {
+  supabaseClient = null;
+}
+
 export function getSupabase() {
   if (supabaseClient) return supabaseClient;
 
-  const url = APP_CONFIG.SUPABASE_URL || localStorage.getItem('PM_SUPABASE_URL');
-  const anonKey = APP_CONFIG.SUPABASE_ANON_KEY || localStorage.getItem('PM_SUPABASE_ANON_KEY');
+  const url = APP_CONFIG.SUPABASE_URL || localStorage.getItem('PM_SUPABASE_URL') || 'https://vhhjbqkwvkktuahkqiwj.supabase.co';
+  
+  // Prioriza JWT anon key para o supabase-js v2 UMD client no navegador
+  const anonKey = (APP_CONFIG.SUPABASE_ANON_KEY && APP_CONFIG.SUPABASE_ANON_KEY.startsWith('eyJ'))
+    ? APP_CONFIG.SUPABASE_ANON_KEY
+    : (typeof localStorage !== 'undefined' && localStorage.getItem('PM_SUPABASE_ANON_KEY') && localStorage.getItem('PM_SUPABASE_ANON_KEY').startsWith('eyJ'))
+      ? localStorage.getItem('PM_SUPABASE_ANON_KEY')
+      : APP_CONFIG.SUPABASE_ANON_KEY || APP_CONFIG.SUPABASE_PUBLISHABLE_KEY || (typeof localStorage !== 'undefined' ? (localStorage.getItem('PM_SUPABASE_ANON_KEY') || localStorage.getItem('PM_SUPABASE_PUBLISHABLE_KEY')) : null);
 
-  if (url && anonKey && window.supabase) {
+  if (url && anonKey && typeof window !== 'undefined' && window.supabase) {
     try {
-      supabaseClient = window.supabase.createClient(url, anonKey);
+      supabaseClient = window.supabase.createClient(url, anonKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true
+        }
+      });
       return supabaseClient;
     } catch (e) {
       console.warn('Erro ao inicializar Supabase:', e);
@@ -25,6 +40,40 @@ export function getSupabase() {
 
 export function isSupabaseConnected() {
   return getSupabase() !== null;
+}
+
+/**
+ * Testa ativamente a conexão com o Supabase
+ */
+export async function testSupabaseConnection() {
+  const sb = getSupabase();
+  if (!sb) {
+    return { 
+      connected: false, 
+      message: 'Supabase não inicializado. Verifique se a URL e a Chave Anônima (anon_key) foram preenchidas.' 
+    };
+  }
+
+  try {
+    // Tenta uma consulta leve em products ou settings
+    const { error: err1 } = await sb.from('products').select('id').limit(1);
+    if (!err1) {
+      return { connected: true, message: 'Conectado com sucesso ao Supabase!' };
+    }
+
+    const { error: err2 } = await sb.from('settings').select('id').limit(1);
+    if (!err2) {
+      return { connected: true, message: 'Conectado com sucesso ao Supabase!' };
+    }
+
+    if (err1 && err1.message) {
+      return { connected: false, message: `Erro ao consultar Supabase: ${err1.message}` };
+    }
+
+    return { connected: false, message: 'Falha ao comunicar com o banco Supabase.' };
+  } catch (e) {
+    return { connected: false, message: e.message || 'Erro inesperado ao conectar.' };
+  }
 }
 
 /**
@@ -195,14 +244,84 @@ export async function fetchStoreSettingsFromDB() {
   const sb = getSupabase();
   if (!sb) return null;
 
-  const { data, error } = await sb
-    .from('settings')
-    .select('*')
-    .eq('active', true)
-    .single();
+  try {
+    const { data, error } = await sb
+      .from('settings')
+      .select('*')
+      .eq('active', true)
+      .limit(1)
+      .maybeSingle();
 
-  if (error) return null;
-  return data;
+    if (!error && data) {
+      // Sincroniza estado de APP_CONFIG com o banco
+      if (data.whatsapp_number) APP_CONFIG.WHATSAPP_NUMBER = data.whatsapp_number;
+      if (data.opening_time) APP_CONFIG.OPENING_TIME = data.opening_time;
+      if (data.closing_time) APP_CONFIG.CLOSING_TIME = data.closing_time;
+      if (data.address) APP_CONFIG.ADDRESS = data.address;
+      if (data.maps_url) APP_CONFIG.GOOGLE_MAPS_URL = data.maps_url;
+      if (data.instagram_url) APP_CONFIG.INSTAGRAM_URL = data.instagram_url;
+      return data;
+    }
+  } catch (err) {
+    console.warn('Erro ao ler settings do Supabase:', err);
+  }
+  return null;
+}
+
+/**
+ * Salva configurações da loja no Supabase (usado no painel administrativo)
+ */
+export async function saveStoreSettingsToDB(settings) {
+  const sb = getSupabase();
+
+  const payload = {
+    store_name: settings.store_name || APP_CONFIG.STORE_NAME || 'PANCHO MBARATE',
+    whatsapp_number: settings.whatsapp_number || APP_CONFIG.WHATSAPP_NUMBER,
+    opening_time: settings.opening_time || APP_CONFIG.OPENING_TIME,
+    closing_time: settings.closing_time || APP_CONFIG.CLOSING_TIME,
+    address: settings.address || APP_CONFIG.ADDRESS,
+    maps_url: settings.maps_url || APP_CONFIG.GOOGLE_MAPS_URL,
+    instagram_url: settings.instagram_url || APP_CONFIG.INSTAGRAM_URL,
+    active: true,
+    updated_at: new Date().toISOString()
+  };
+
+  // Atualiza APP_CONFIG local imediatamente
+  if (payload.whatsapp_number) APP_CONFIG.WHATSAPP_NUMBER = payload.whatsapp_number;
+  if (payload.opening_time) APP_CONFIG.OPENING_TIME = payload.opening_time;
+  if (payload.closing_time) APP_CONFIG.CLOSING_TIME = payload.closing_time;
+  if (payload.address) APP_CONFIG.ADDRESS = payload.address;
+  if (payload.maps_url) APP_CONFIG.GOOGLE_MAPS_URL = payload.maps_url;
+
+  if (sb) {
+    try {
+      const { data: existing } = await sb.from('settings').select('id').limit(1).maybeSingle();
+      if (existing?.id) {
+        const { data, error } = await sb
+          .from('settings')
+          .update(payload)
+          .eq('id', existing.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return { success: true, data };
+      } else {
+        payload.created_at = new Date().toISOString();
+        const { data, error } = await sb
+          .from('settings')
+          .insert(payload)
+          .select()
+          .single();
+        if (error) throw error;
+        return { success: true, data };
+      }
+    } catch (err) {
+      console.warn('Erro ao salvar settings no Supabase:', err);
+      return { success: false, error: err, isLocal: true };
+    }
+  }
+
+  return { success: true, data: payload, isLocal: true };
 }
 
 /**
@@ -703,5 +822,267 @@ export async function saveAllSalesChannelsToDB(channelsArray) {
   }
 
   return { success: true, data: channelsArray, isLocal: true };
+}
+
+/**
+ * ==============================================================================
+ * MÓDULO DE FICHAS TÉCNICAS E CMV — SINCRONIZAÇÃO COMPLETA COM O SUPABASE
+ * Salva insumos, sub-receitas, fichas técnicas, itens e simulações de vendas
+ * ==============================================================================
+ */
+
+/**
+ * Salva todos os dados de receitas no Supabase
+ */
+export async function saveAllRecipeDataToSupabase(recipeState) {
+  const sb = getSupabase();
+  if (!sb) {
+    return { success: false, error: 'Supabase não conectado', isLocal: true };
+  }
+
+  try {
+    // 1. INSUMOS (recipe_ingredients)
+    const ingPayload = (recipeState.ingredients || []).map(i => ({
+      code: i.code,
+      name: i.name,
+      category: i.category,
+      type: i.type || 'ingrediente',
+      purchase_quantity: Number(i.purchase_quantity || 1),
+      purchase_unit: i.purchase_unit || 'un',
+      purchase_price: Number(i.purchase_price || 0),
+      base_unit: i.base_unit || 'un',
+      unit_cost: Number(i.unit_cost || 0),
+      default_correction_factor: Number(i.default_correction_factor || 1.0),
+      notes: i.notes || '',
+      updated_at: new Date().toISOString()
+    }));
+
+    let savedIngredients = [];
+    if (ingPayload.length > 0) {
+      const { data: upsertedIngs, error: ingErr } = await sb
+        .from('recipe_ingredients')
+        .upsert(ingPayload, { onConflict: 'code' })
+        .select();
+
+      if (ingErr) {
+        console.warn('Erro ao sincronizar recipe_ingredients:', ingErr);
+      } else if (upsertedIngs) {
+        savedIngredients = upsertedIngs;
+        // Mapeia IDs do banco de volta para o estado local
+        upsertedIngs.forEach(dbIng => {
+          const localIng = recipeState.ingredients.find(i => i.code === dbIng.code);
+          if (localIng) localIng.id = dbIng.id;
+        });
+      }
+    }
+
+    // 2. FICHAS TÉCNICAS E SUB-RECEITAS (recipe_sheets)
+    const allSheets = [
+      ...(recipeState.subRecipes || []).map(s => ({ ...s, type: 'sub_recipe' })),
+      ...(recipeState.recipes || []).map(r => ({ ...r, type: 'final_product' }))
+    ];
+
+    const sheetsPayload = allSheets.map((s, idx) => ({
+      code: s.code,
+      name: s.name,
+      type: s.type,
+      category: s.category || (s.type === 'sub_recipe' ? 'Sub-Receitas' : 'Lanches'),
+      yield_portions: Number(s.yield_portions || 1),
+      yield_unit: s.yield_unit || 'un',
+      portion_size_description: s.portion_size_description || '',
+      waste_percent: Number(s.waste_percent || 0),
+      sale_price: Number(s.sale_price || 0),
+      suggested_price: Number(s.suggested_price || 0),
+      preparation_method: s.preparation_method || '',
+      notes: s.notes || '',
+      sort_order: Number(s.sort_order || idx + 1),
+      updated_at: new Date().toISOString()
+    }));
+
+    let savedSheets = [];
+    if (sheetsPayload.length > 0) {
+      const { data: upsertedSheets, error: sheetErr } = await sb
+        .from('recipe_sheets')
+        .upsert(sheetsPayload, { onConflict: 'code' })
+        .select();
+
+      if (sheetErr) {
+        console.warn('Erro ao sincronizar recipe_sheets:', sheetErr);
+      } else if (upsertedSheets) {
+        savedSheets = upsertedSheets;
+        upsertedSheets.forEach(dbSheet => {
+          const localSub = recipeState.subRecipes?.find(s => s.code === dbSheet.code);
+          if (localSub) localSub.id = dbSheet.id;
+          const localRec = recipeState.recipes?.find(r => r.code === dbSheet.code);
+          if (localRec) localRec.id = dbSheet.id;
+        });
+      }
+    }
+
+    // 3. ITENS DAS FICHAS TÉCNICAS (recipe_sheet_items)
+    if (savedSheets.length > 0) {
+      const allSheetItems = [];
+
+      allSheets.forEach(sheet => {
+        const dbSheet = savedSheets.find(s => s.code === sheet.code);
+        if (!dbSheet) return;
+
+        (sheet.items || []).forEach((item, itemIdx) => {
+          // Resolve ID do ingrediente ou sub-receita
+          let resolvedIngId = null;
+          let resolvedSubId = null;
+
+          if (item.ingredient_id) {
+            const matchedIng = savedIngredients.find(i => i.id === item.ingredient_id || i.code === item.ingredient_code);
+            resolvedIngId = matchedIng?.id || (item.ingredient_id.startsWith('ing-') ? null : item.ingredient_id);
+          }
+
+          if (item.sub_recipe_id) {
+            const matchedSub = savedSheets.find(s => s.id === item.sub_recipe_id || s.code === item.sub_recipe_code);
+            resolvedSubId = matchedSub?.id || (item.sub_recipe_id.startsWith('sub-') ? null : item.sub_recipe_id);
+          }
+
+          allSheetItems.push({
+            recipe_id: dbSheet.id,
+            item_type: item.item_type || (resolvedSubId ? 'sub_recipe' : (item.type === 'embalagem' ? 'packaging' : 'ingredient')),
+            ingredient_id: resolvedIngId,
+            sub_recipe_id: resolvedSubId,
+            item_name: item.item_name || 'Item',
+            net_quantity: Number(item.net_quantity || 0),
+            unit: item.unit || 'un',
+            correction_factor: Number(item.correction_factor || 1.0),
+            notes: item.notes || '',
+            sort_order: itemIdx + 1,
+            updated_at: new Date().toISOString()
+          });
+        });
+      });
+
+      const sheetIds = savedSheets.map(s => s.id);
+      // Remove itens antigos das receitas salvas e reinsere os atualizados
+      await sb.from('recipe_sheet_items').delete().in('recipe_id', sheetIds);
+      if (allSheetItems.length > 0) {
+        const { error: itemsErr } = await sb.from('recipe_sheet_items').insert(allSheetItems);
+        if (itemsErr) console.warn('Erro ao inserir recipe_sheet_items:', itemsErr);
+      }
+    }
+
+    // 4. SIMULAÇÃO DE VENDAS (recipe_sales_simulations)
+    if (savedSheets.length > 0 && recipeState.simulations) {
+      const simPayload = [];
+      (recipeState.recipes || []).forEach(r => {
+        const dbSheet = savedSheets.find(s => s.code === r.code);
+        if (dbSheet) {
+          const units = recipeState.simulations[r.id] ?? recipeState.simulations[r.code] ?? 100;
+          simPayload.push({
+            recipe_id: dbSheet.id,
+            estimated_monthly_units: Number(units || 0),
+            updated_at: new Date().toISOString()
+          });
+        }
+      });
+
+      if (simPayload.length > 0) {
+        await sb.from('recipe_sales_simulations').upsert(simPayload, { onConflict: 'recipe_id' });
+      }
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.warn('Erro completo ao salvar receitas no Supabase:', err);
+    return { success: false, error: err };
+  }
+}
+
+/**
+ * Lê todos os dados de receitas do Supabase
+ */
+export async function fetchRecipeDataFromSupabase() {
+  const sb = getSupabase();
+  if (!sb) return null;
+
+  try {
+    const [resIng, resRec, resSim] = await Promise.all([
+      sb.from('recipe_ingredients').select('*').order('code', { ascending: true }),
+      sb.from('recipe_sheets').select('*, recipe_sheet_items(*)').order('sort_order', { ascending: true }),
+      sb.from('recipe_sales_simulations').select('*')
+    ]);
+
+    if (resIng.error && resRec.error) return null;
+
+    const ingredients = resIng.data || [];
+    const subRecipes = [];
+    const recipes = [];
+    const simulations = {};
+
+    if (resRec.data) {
+      resRec.data.forEach(r => {
+        const formatted = {
+          ...r,
+          items: (r.recipe_sheet_items || []).map(it => ({
+            ...it,
+            net_quantity: Number(it.net_quantity),
+            correction_factor: Number(it.correction_factor || 1.0)
+          }))
+        };
+        if (r.type === 'sub_recipe') {
+          subRecipes.push(formatted);
+        } else {
+          recipes.push(formatted);
+        }
+      });
+    }
+
+    if (resSim.data) {
+      resSim.data.forEach(s => {
+        simulations[s.recipe_id] = s.estimated_monthly_units;
+      });
+    }
+
+    return { ingredients, subRecipes, recipes, simulations };
+  } catch (err) {
+    console.warn('Erro ao ler receitas do Supabase:', err);
+    return null;
+  }
+}
+
+/**
+ * Exclui um insumo do Supabase
+ */
+export async function deleteIngredientFromSupabase(ingredientId, code) {
+  const sb = getSupabase();
+  if (!sb) return { success: true };
+
+  try {
+    if (ingredientId && !ingredientId.startsWith('ing-')) {
+      await sb.from('recipe_ingredients').delete().eq('id', ingredientId);
+    } else if (code) {
+      await sb.from('recipe_ingredients').delete().eq('code', code);
+    }
+    return { success: true };
+  } catch (err) {
+    console.warn('Erro ao excluir ingrediente do Supabase:', err);
+    return { success: false, error: err };
+  }
+}
+
+/**
+ * Exclui uma ficha técnica ou sub-receita do Supabase
+ */
+export async function deleteRecipeFromSupabase(recipeId, code) {
+  const sb = getSupabase();
+  if (!sb) return { success: true };
+
+  try {
+    if (recipeId && !recipeId.startsWith('rec-') && !recipeId.startsWith('sub-')) {
+      await sb.from('recipe_sheets').delete().eq('id', recipeId);
+    } else if (code) {
+      await sb.from('recipe_sheets').delete().eq('code', code);
+    }
+    return { success: true };
+  } catch (err) {
+    console.warn('Erro ao excluir ficha técnica do Supabase:', err);
+    return { success: false, error: err };
+  }
 }
 

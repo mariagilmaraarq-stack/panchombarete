@@ -18,10 +18,15 @@ import {
 } from './products.js';
 import { 
   getSupabase, 
+  isSupabaseConnected,
   getAdminOrders, 
   updateOrderStatusInDB,
   saveProductToSupabase,
-  deleteProductFromSupabase 
+  deleteProductFromSupabase,
+  saveStoreSettingsToDB,
+  fetchStoreSettingsFromDB,
+  resetSupabaseClient,
+  testSupabaseConnection 
 } from './supabase.js';
 
 let currentOrders = [];
@@ -65,16 +70,33 @@ function setupAuth() {
     }
 
     if (sessionStorage.getItem('PM_ADMIN_LOGGED') === 'true') {
-      unlockDashboard(true, 'Admin Demo Local');
+      const isSb = getSupabase() !== null;
+      unlockDashboard(!isSb, 'panchombarete');
     }
   };
 
-  const unlockDashboard = async (isDemo, email = 'admin@panchombarate.com') => {
+  const unlockDashboard = async (isDemo, email = 'panchombarete') => {
     isDemoMode = isDemo;
     loginScreen.classList.add('hidden');
     dashboardContainer.classList.remove('hidden');
     if (sessionBadge) {
-      sessionBadge.textContent = isDemo ? '● Modo Local (Demo)' : `● ${email}`;
+      if (isDemo) {
+        sessionBadge.textContent = '● Modo Local (Offline)';
+        sessionBadge.className = 'px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300';
+      } else {
+        sessionBadge.textContent = `● Supabase Conectado (${email})`;
+        sessionBadge.className = 'px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300';
+      }
+    }
+    const topbarBadge = document.getElementById('topbar-session-badge');
+    if (topbarBadge) {
+      if (isDemo) {
+        topbarBadge.className = 'hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300';
+        topbarBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-500"></span><span>Modo Local (Offline)</span>';
+      } else {
+        topbarBadge.className = 'hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-300';
+        topbarBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span>Supabase Conectado (${email})</span>`;
+      }
     }
     window.lucide?.createIcons();
     await loadDashboardData();
@@ -98,7 +120,8 @@ function setupAuth() {
     // Validação direta com as credenciais mestras do gestor
     if (isMasterUser && isMasterPass) {
       sessionStorage.setItem('PM_ADMIN_LOGGED', 'true');
-      unlockDashboard(true, 'panchombarete');
+      const isSb = getSupabase() !== null;
+      unlockDashboard(!isSb, 'panchombarete');
       submitBtn.disabled = false;
       submitBtn.textContent = 'ENTRAR NO PAINEL';
       return;
@@ -116,7 +139,8 @@ function setupAuth() {
         // Fallback se não bater no Supabase
         if (isMasterPass) {
           sessionStorage.setItem('PM_ADMIN_LOGGED', 'true');
-          unlockDashboard(true, email || 'panchombarete');
+          const isSb = getSupabase() !== null;
+          unlockDashboard(!isSb, email || 'panchombarete');
           return;
         }
         errorMsg.textContent = 'Credenciais incorretas.';
@@ -128,7 +152,8 @@ function setupAuth() {
     } else {
       if (isMasterPass || password === 'admin' || (cleanUser && password.length >= 4)) {
         sessionStorage.setItem('PM_ADMIN_LOGGED', 'true');
-        unlockDashboard(true, email || 'panchombarete');
+        const isSb = getSupabase() !== null;
+        unlockDashboard(!isSb, email || 'panchombarete');
       } else {
         errorMsg.textContent = 'Usuário ou senha incorretos.';
         errorMsg.classList.remove('hidden');
@@ -1056,7 +1081,10 @@ function setupProductsManagement() {
       saveProductLocally(payload);
 
       // Sincroniza com Supabase se configurado
-      await saveProductToSupabase(payload);
+      const sbRes = await saveProductToSupabase(payload);
+      if (sbRes?.success && sbRes.product) {
+        saveProductLocally(sbRes.product);
+      }
 
       // Atualiza estado local da aplicação
       allProducts = await getAllProducts();
@@ -1351,9 +1379,20 @@ function setupSettingsForm() {
   if (addressInput) addressInput.value = APP_CONFIG.ADDRESS;
   if (mapsInput) mapsInput.value = APP_CONFIG.GOOGLE_MAPS_URL;
   if (sbUrlInput) sbUrlInput.value = APP_CONFIG.SUPABASE_URL;
-  if (sbKeyInput) sbKeyInput.value = APP_CONFIG.SUPABASE_ANON_KEY;
+  if (sbKeyInput) sbKeyInput.value = APP_CONFIG.SUPABASE_ANON_KEY || APP_CONFIG.SUPABASE_PUBLISHABLE_KEY || '';
 
-  form?.addEventListener('submit', (e) => {
+  // Carrega configurações do Supabase se existirem
+  fetchStoreSettingsFromDB().then(dbSettings => {
+    if (dbSettings) {
+      if (whatsappInput && dbSettings.whatsapp_number) whatsappInput.value = dbSettings.whatsapp_number;
+      if (openingInput && dbSettings.opening_time) openingInput.value = dbSettings.opening_time;
+      if (closingInput && dbSettings.closing_time) closingInput.value = dbSettings.closing_time;
+      if (addressInput && dbSettings.address) addressInput.value = dbSettings.address;
+      if (mapsInput && dbSettings.maps_url) mapsInput.value = dbSettings.maps_url;
+    }
+  });
+
+  form?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const newPhone = whatsappInput.value.trim().replace(/\D/g, '');
@@ -1372,10 +1411,123 @@ function setupSettingsForm() {
     if (newClosing) APP_CONFIG.CLOSING_TIME = newClosing;
     if (newAddress) APP_CONFIG.ADDRESS = newAddress;
     if (newMaps) APP_CONFIG.GOOGLE_MAPS_URL = newMaps;
-    if (newSbUrl) localStorage.setItem('PM_SUPABASE_URL', newSbUrl);
-    if (newSbKey) localStorage.setItem('PM_SUPABASE_ANON_KEY', newSbKey);
+    if (newSbUrl) {
+      APP_CONFIG.SUPABASE_URL = newSbUrl;
+      localStorage.setItem('PM_SUPABASE_URL', newSbUrl);
+    }
+    if (newSbKey) {
+      if (newSbKey.startsWith('eyJ')) {
+        APP_CONFIG.SUPABASE_ANON_KEY = newSbKey;
+        localStorage.setItem('PM_SUPABASE_ANON_KEY', newSbKey);
+      } else if (newSbKey.startsWith('sb_publishable_')) {
+        APP_CONFIG.SUPABASE_PUBLISHABLE_KEY = newSbKey;
+        localStorage.setItem('PM_SUPABASE_PUBLISHABLE_KEY', newSbKey);
+      } else {
+        APP_CONFIG.SUPABASE_ANON_KEY = newSbKey;
+        localStorage.setItem('PM_SUPABASE_ANON_KEY', newSbKey);
+      }
+    }
+
+    resetSupabaseClient();
+
+    // 1. Salva configurações gerais na tabela settings do Supabase
+    const storeSettingsPayload = {
+      store_name: APP_CONFIG.STORE_NAME,
+      whatsapp_number: newPhone || APP_CONFIG.WHATSAPP_NUMBER,
+      opening_time: newOpening || APP_CONFIG.OPENING_TIME,
+      closing_time: newClosing || APP_CONFIG.CLOSING_TIME,
+      address: newAddress || APP_CONFIG.ADDRESS,
+      maps_url: newMaps || APP_CONFIG.GOOGLE_MAPS_URL
+    };
+    await saveStoreSettingsToDB(storeSettingsPayload);
+
+    // 2. Persiste variáveis no arquivo .env via backend local
+    try {
+      await fetch('/api/save-env', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          SUPABASE_URL: newSbUrl || APP_CONFIG.SUPABASE_URL,
+          SUPABASE_ANON_KEY: newSbKey || APP_CONFIG.SUPABASE_ANON_KEY,
+          WHATSAPP_NUMBER: newPhone || APP_CONFIG.WHATSAPP_NUMBER,
+          GOOGLE_MAPS_URL: newMaps || APP_CONFIG.GOOGLE_MAPS_URL
+        })
+      });
+    } catch (_) {}
+
+    // 3. Testa conexão com o Supabase
+    const conn = await testSupabaseConnection();
+    if (conn.connected) {
+      isDemoMode = false;
+      const sessionBadge = document.getElementById('admin-session-badge');
+      if (sessionBadge) {
+        sessionBadge.textContent = '● Supabase Conectado (panchombarete)';
+        sessionBadge.className = 'px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300';
+      }
+      const topbarBadge = document.getElementById('topbar-session-badge');
+      if (topbarBadge) {
+        topbarBadge.className = 'hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-300';
+        topbarBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span>Supabase Conectado (panchombarete)</span>';
+      }
+      showToast('Configurações salvas e conectadas ao Supabase com sucesso!', '✓');
+    } else {
+      showToast('Configurações salvas! ' + conn.message, '⚠️');
+    }
 
     feedback?.classList.remove('hidden');
-    setTimeout(() => feedback?.classList.add('hidden'), 3000);
+    setTimeout(() => feedback?.classList.add('hidden'), 3500);
+  });
+
+  const btnTestSb = document.getElementById('btn-test-supabase');
+  const testFeedback = document.getElementById('supabase-test-feedback');
+
+  btnTestSb?.addEventListener('click', async () => {
+    const newSbUrl = sbUrlInput.value.trim();
+    const newSbKey = sbKeyInput.value.trim();
+
+    if (newSbUrl) {
+      APP_CONFIG.SUPABASE_URL = newSbUrl;
+      localStorage.setItem('PM_SUPABASE_URL', newSbUrl);
+    }
+    if (newSbKey) {
+      if (newSbKey.startsWith('eyJ')) {
+        APP_CONFIG.SUPABASE_ANON_KEY = newSbKey;
+        localStorage.setItem('PM_SUPABASE_ANON_KEY', newSbKey);
+      } else if (newSbKey.startsWith('sb_publishable_')) {
+        APP_CONFIG.SUPABASE_PUBLISHABLE_KEY = newSbKey;
+        localStorage.setItem('PM_SUPABASE_PUBLISHABLE_KEY', newSbKey);
+      } else {
+        APP_CONFIG.SUPABASE_ANON_KEY = newSbKey;
+        localStorage.setItem('PM_SUPABASE_ANON_KEY', newSbKey);
+      }
+    }
+    resetSupabaseClient();
+
+    if (testFeedback) {
+      testFeedback.className = 'text-xs font-bold text-amber-600 animate-pulse';
+      testFeedback.textContent = 'Testando conexão com o Supabase...';
+    }
+
+    const conn = await testSupabaseConnection();
+    if (testFeedback) {
+      if (conn.connected) {
+        isDemoMode = false;
+        const sessionBadge = document.getElementById('admin-session-badge');
+        if (sessionBadge) {
+          sessionBadge.textContent = '● Supabase Conectado (panchombarete)';
+          sessionBadge.className = 'px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300';
+        }
+        const topbarBadge = document.getElementById('topbar-session-badge');
+        if (topbarBadge) {
+          topbarBadge.className = 'hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-300';
+          topbarBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span>Supabase Conectado (panchombarete)</span>';
+        }
+        testFeedback.className = 'text-xs font-black text-emerald-600';
+        testFeedback.textContent = '● Conectado com sucesso!';
+      } else {
+        testFeedback.className = 'text-xs font-bold text-redSport';
+        testFeedback.textContent = `● ${conn.message}`;
+      }
+    }
   });
 }

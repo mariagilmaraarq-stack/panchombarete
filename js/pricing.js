@@ -10,6 +10,7 @@ import {
 } from './products.js';
 import { 
   getSupabase,
+  isSupabaseConnected,
   saveProductToSupabase,
   fetchPricingSettingsFromDB,
   savePricingSettingsToDB,
@@ -91,7 +92,8 @@ function setupAuth() {
     }
 
     if (sessionStorage.getItem('PM_ADMIN_LOGGED') === 'true') {
-      unlockDashboard(true, 'Admin Demo Local');
+      const isSb = isSupabaseConnected();
+      unlockDashboard(!isSb, 'panchombarete');
       return;
     }
 
@@ -100,12 +102,18 @@ function setupAuth() {
     dashboardContainer?.classList.add('hidden');
   };
 
-  const unlockDashboard = async (isDemo, email = 'admin@panchombarate.com') => {
+  const unlockDashboard = async (isDemo, email = 'panchombarete') => {
     state.isDemoMode = isDemo;
     loginScreen?.classList.add('hidden');
     dashboardContainer?.classList.remove('hidden');
     if (sessionBadge) {
-      sessionBadge.textContent = isDemo ? '● Modo Local (Demo)' : `● ${email}`;
+      if (isDemo) {
+        sessionBadge.textContent = '● Modo Local (Offline)';
+        sessionBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300';
+      } else {
+        sessionBadge.textContent = `● Supabase Conectado (${email})`;
+        sessionBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300';
+      }
     }
     await loadInitialData();
   };
@@ -127,7 +135,8 @@ function setupAuth() {
     // Validação direta com as credenciais mestras do gestor
     if (isMasterUser && isMasterPass) {
       sessionStorage.setItem('PM_ADMIN_LOGGED', 'true');
-      unlockDashboard(true, 'panchombarete');
+      const isSb = isSupabaseConnected();
+      unlockDashboard(!isSb, 'panchombarete');
       submitBtn.disabled = false;
       submitBtn.textContent = 'ENTRAR NO PAINEL';
       return;
@@ -144,7 +153,8 @@ function setupAuth() {
       } catch (err) {
         if (isMasterPass) {
           sessionStorage.setItem('PM_ADMIN_LOGGED', 'true');
-          unlockDashboard(true, email || 'panchombarete');
+          const isSb = isSupabaseConnected();
+          unlockDashboard(!isSb, email || 'panchombarete');
           return;
         }
         if (errorMsg) {
@@ -158,7 +168,8 @@ function setupAuth() {
     } else {
       if (isMasterPass || password === 'admin' || (cleanUser && password.length >= 4)) {
         sessionStorage.setItem('PM_ADMIN_LOGGED', 'true');
-        unlockDashboard(true, email || 'panchombarete');
+        const isSb = isSupabaseConnected();
+        unlockDashboard(!isSb, email || 'panchombarete');
       } else {
         if (errorMsg) {
           errorMsg.textContent = 'Usuário ou senha incorretos.';

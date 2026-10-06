@@ -28,7 +28,7 @@ import {
   calculateSalesSimulation,
   resetToDefaults
 } from './recipes.js';
-import { getSupabase } from './supabase.js';
+import { getSupabase, isSupabaseConnected } from './supabase.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   setupAuth();
@@ -61,11 +61,17 @@ function setupAuth() {
   const errorMsg = document.getElementById('login-error-msg');
   const sessionBadge = document.getElementById('recipes-session-badge');
 
-  const unlockDashboard = (isDemo = false, email = '') => {
+  const unlockDashboard = (isDemo = false, email = 'panchombarete') => {
     loginScreen?.classList.add('hidden');
     dashboardContainer?.classList.remove('hidden');
     if (sessionBadge) {
-      sessionBadge.textContent = isDemo ? '● Modo Demo Local' : `● ${email || 'Admin Conectado'}`;
+      if (isDemo) {
+        sessionBadge.textContent = '● Modo Local (Offline)';
+        sessionBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300';
+      } else {
+        sessionBadge.textContent = `● Supabase Conectado (${email || 'panchombarete'})`;
+        sessionBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300';
+      }
     }
   };
 
@@ -84,7 +90,8 @@ function setupAuth() {
     }
 
     if (sessionStorage.getItem('PM_ADMIN_LOGGED') === 'true') {
-      unlockDashboard(true, 'Admin Demo Local');
+      const isSb = isSupabaseConnected();
+      unlockDashboard(!isSb, 'panchombarete');
       return;
     }
 
@@ -105,7 +112,8 @@ function setupAuth() {
     // Validação direta com as credenciais mestras do gestor
     if (isMasterUser && isMasterPass) {
       sessionStorage.setItem('PM_ADMIN_LOGGED', 'true');
-      unlockDashboard(true, 'panchombarete');
+      const isSb = isSupabaseConnected();
+      unlockDashboard(!isSb, 'panchombarete');
       showToast('Login realizado com sucesso!', 'success');
       return;
     }
@@ -122,7 +130,8 @@ function setupAuth() {
       } catch (err) {
         if (isMasterPass) {
           sessionStorage.setItem('PM_ADMIN_LOGGED', 'true');
-          unlockDashboard(true, email || 'panchombarete');
+          const isSb = isSupabaseConnected();
+          unlockDashboard(!isSb, email || 'panchombarete');
           showToast('Login realizado com sucesso!', 'success');
           return;
         }
@@ -137,7 +146,8 @@ function setupAuth() {
     // Fallback local
     if (isMasterPass || password === 'admin' || (cleanUser && password.length >= 4)) {
       sessionStorage.setItem('PM_ADMIN_LOGGED', 'true');
-      unlockDashboard(true, email || 'panchombarete');
+      const isSb = isSupabaseConnected();
+      unlockDashboard(!isSb, email || 'panchombarete');
       showToast('Login realizado com sucesso!', 'success');
     } else {
       if (errorMsg) {

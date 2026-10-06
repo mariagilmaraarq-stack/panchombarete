@@ -4,7 +4,13 @@
  * Arquitetura resiliente com Supabase e persistência local (LocalStorage).
  */
 
-import { getSupabase } from './supabase.js';
+import { 
+  getSupabase, 
+  saveAllRecipeDataToSupabase, 
+  fetchRecipeDataFromSupabase, 
+  deleteIngredientFromSupabase, 
+  deleteRecipeFromSupabase 
+} from './supabase.js';
 
 // ==============================================================================
 // 1. DADOS INICIAIS PRÉ-CADASTRADOS (SEEDS OFICIAIS)
@@ -1354,7 +1360,13 @@ export function deleteIngredient(id) {
     return { success: false, message: 'Este insumo não pode ser excluído pois está em uso nas receitas!' };
   }
 
+  const ing = state.ingredients.find(i => i.id === id);
   state.ingredients = state.ingredients.filter(i => i.id !== id);
+  
+  if (ing) {
+    deleteIngredientFromSupabase(ing.id, ing.code);
+  }
+
   saveStateDebounced();
   return { success: true };
 }
@@ -1481,7 +1493,7 @@ export function loadPricingIntegration() {
 export async function loadRecipeData() {
   loadPricingIntegration();
 
-  // Tenta carregar do LocalStorage primeiro para resposta instantânea
+  // 1. Tenta carregar do LocalStorage primeiro para resposta instantânea na interface
   try {
     const local = localStorage.getItem('PM_RECIPES_DATA_V1');
     if (local) {
@@ -1495,48 +1507,36 @@ export async function loadRecipeData() {
     console.warn('Erro ao carregar dados locais de receitas:', e);
   }
 
-  // Tenta carregar do Supabase se disponível
-  const sb = getSupabase();
-  if (sb) {
-    try {
-      const [resIng, resRec, resSim] = await Promise.all([
-        sb.from('recipe_ingredients').select('*'),
-        sb.from('recipe_sheets').select('*, recipe_sheet_items(*)'),
-        sb.from('recipe_sales_simulations').select('*')
-      ]);
-
-      if (!resIng.error && resIng.data && resIng.data.length > 0) {
-        state.ingredients = resIng.data;
+  // 2. Carrega dados atualizados do Supabase se disponível
+  try {
+    const dbData = await fetchRecipeDataFromSupabase();
+    if (dbData) {
+      if (dbData.ingredients && dbData.ingredients.length > 0) {
+        state.ingredients = dbData.ingredients;
+      }
+      if (dbData.subRecipes && dbData.subRecipes.length > 0) {
+        state.subRecipes = dbData.subRecipes;
+      }
+      if (dbData.recipes && dbData.recipes.length > 0) {
+        state.recipes = dbData.recipes;
+      }
+      if (dbData.simulations && Object.keys(dbData.simulations).length > 0) {
+        state.simulations = dbData.simulations;
       }
 
-      if (!resRec.error && resRec.data && resRec.data.length > 0) {
-        const sub = [];
-        const final = [];
-        resRec.data.forEach(r => {
-          const formatted = {
-            ...r,
-            items: (r.recipe_sheet_items || []).map(it => ({
-              ...it,
-              net_quantity: Number(it.net_quantity),
-              correction_factor: Number(it.correction_factor || 1.0)
-            }))
-          };
-          if (r.type === 'sub_recipe') sub.push(formatted);
-          else final.push(formatted);
-        });
-
-        if (sub.length > 0) state.subRecipes = sub;
-        if (final.length > 0) state.recipes = final;
+      // Atualiza cache local com a versão oficial do Supabase
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('PM_RECIPES_DATA_V1', JSON.stringify({
+          ingredients: state.ingredients,
+          subRecipes: state.subRecipes,
+          recipes: state.recipes,
+          simulations: state.simulations,
+          savedAt: new Date().toISOString()
+        }));
       }
-
-      if (!resSim.error && resSim.data && resSim.data.length > 0) {
-        resSim.data.forEach(s => {
-          state.simulations[s.recipe_id] = s.estimated_monthly_units;
-        });
-      }
-    } catch (err) {
-      console.warn('Supabase não conectado para receitas. Usando dados locais.', err);
     }
+  } catch (err) {
+    console.warn('Supabase não conectado ou erro ao ler receitas. Mantendo dados locais.', err);
   }
 
   return state;
@@ -1551,12 +1551,12 @@ export function saveStateDebounced() {
 }
 
 /**
- * Salva os dados no LocalStorage e no Supabase
+ * Salva os dados no LocalStorage e sincroniza todas as tabelas no Supabase
  */
 export async function saveRecipeData() {
   state.isSaving = true;
 
-  // 1. Salva imediatamente em LocalStorage
+  // 1. Salva imediatamente em LocalStorage (resiliência offline)
   const payload = {
     ingredients: state.ingredients,
     subRecipes: state.subRecipes,
@@ -1569,28 +1569,11 @@ export async function saveRecipeData() {
   }
   state.lastSavedAt = new Date();
 
-  // 2. Se houver conexão com o Supabase, tenta salvar
-  const sb = getSupabase();
-  if (sb) {
-    try {
-      // Upsert dos ingredientes
-      const ingPayload = state.ingredients.map(i => ({
-        code: i.code,
-        name: i.name,
-        category: i.category,
-        type: i.type,
-        purchase_quantity: i.purchase_quantity,
-        purchase_unit: i.purchase_unit,
-        purchase_price: i.purchase_price,
-        base_unit: i.base_unit,
-        unit_cost: i.unit_cost,
-        default_correction_factor: i.default_correction_factor,
-        notes: i.notes
-      }));
-      await sb.from('recipe_ingredients').upsert(ingPayload, { onConflict: 'code' });
-    } catch (e) {
-      console.warn('Erro ao salvar no Supabase (operando via local):', e);
-    }
+  // 2. Sincronização estruturada no Supabase (insumos, fichas, itens e simulações)
+  try {
+    await saveAllRecipeDataToSupabase(state);
+  } catch (e) {
+    console.warn('Erro ao sincronizar receitas no Supabase (operando via local):', e);
   }
 
   state.isSaving = false;

@@ -7,6 +7,14 @@ import { getActiveProducts, getActiveAddons, getActiveDrinks, formatGs } from '.
 import { cart } from './cart.js';
 import { openWhatsApp } from './whatsapp.js';
 import { createOrderInDB, fetchStoreSettingsFromDB } from './supabase.js';
+import { 
+  getCurrentLang, 
+  setLanguage, 
+  t, 
+  translateProduct, 
+  translateAddon, 
+  applyTranslationsToDOM 
+} from './i18n.js';
 
 let activeProductsList = [];
 let activeAddonsList = [];
@@ -14,6 +22,7 @@ let activeDrinksList = [];
 let storeStatus = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
+  applyTranslationsToDOM();
   await initStore();
   renderProducts();
   renderAddons();
@@ -53,8 +62,8 @@ async function initStore() {
     console.info('Configurações padrão ativas.');
   }
 
-  // Verifica horário de funcionamento
-  storeStatus = getStoreStatus(APP_CONFIG.OPENING_TIME, APP_CONFIG.CLOSING_TIME);
+  // Verifica horário de funcionamento de acordo com o idioma
+  storeStatus = getStoreStatus(APP_CONFIG.OPENING_TIME, APP_CONFIG.CLOSING_TIME, getCurrentLang());
   updateStatusBadgeUI(storeStatus);
 
   // Carrega catálogos
@@ -95,14 +104,18 @@ function renderProducts() {
   if (!container) return;
 
   container.innerHTML = '';
+  const currentLang = getCurrentLang();
 
-  activeProductsList.forEach((product) => {
-    const qty = cart.getProductQuantity(product.id);
+  activeProductsList.forEach((rawProduct) => {
+    const product = translateProduct(rawProduct, currentLang);
+    const qty = cart.getProductQuantity(rawProduct.id);
     const isSelected = qty > 0;
-    const sausageText = product.sausages_qty === 1 ? '1 Salsicha' : `${product.sausages_qty} Salsichas`;
+    const sausageText = rawProduct.sausages_qty === 1 
+      ? t('sausage_single') 
+      : t('sausage_plural', { n: rawProduct.sausages_qty });
 
     const card = document.createElement('article');
-    card.id = `product-card-${product.id}`;
+    card.id = `product-card-${rawProduct.id}`;
     card.className = `pancho-card group relative bg-white rounded-3xl p-4 border-2 transition-all duration-300 card-shadow card-shadow-hover flex flex-col justify-between ${
       isSelected ? 'is-selected border-mustard' : 'border-coffee/5 hover:border-mustard/40'
     }`;
@@ -141,7 +154,7 @@ function renderProducts() {
       <!-- Preço e Stepper de Quantidade -->
       <div class="mt-4 pt-3 border-t border-coffee/5 flex items-center justify-between gap-2">
         <div>
-          <span class="block text-[10px] uppercase font-bold text-coffee-soft tracking-wider">Unidade</span>
+          <span class="block text-[10px] uppercase font-bold text-coffee-soft tracking-wider">${t('card_unit')}</span>
           <span class="text-lg md:text-xl font-black text-coffee tracking-tight">
             ${product.promotional_price_gs ? `
               <span class="text-xs text-coffee-soft line-through mr-1 font-semibold">${formatGs(product.price_gs)}</span>
@@ -160,7 +173,7 @@ function renderProducts() {
             </div>
           ` : `
             <button type="button" class="btn-card-select px-4 py-2 rounded-full font-black text-xs tracking-wide uppercase transition-all shadow-sm bg-mustard hover:bg-mustard-hover text-coffee btn-press flex items-center gap-1">
-              <span>+ Escolher</span>
+              <span>${t('btn_select')}</span>
             </button>
           `}
         </div>
@@ -169,8 +182,8 @@ function renderProducts() {
 
     // Listeners do Card
     const triggerSelection = () => {
-      if (!cart.isProductSelected(product.id)) {
-        cart.setProductQuantity(product, 1);
+      if (!cart.isProductSelected(rawProduct.id)) {
+        cart.setProductQuantity(rawProduct, 1);
         renderProducts();
       }
     };
@@ -183,7 +196,7 @@ function renderProducts() {
     if (selectBtn) {
       selectBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        cart.setProductQuantity(product, 1);
+        cart.setProductQuantity(rawProduct, 1);
         renderProducts();
       });
     }
@@ -192,7 +205,7 @@ function renderProducts() {
     if (minusBtn) {
       minusBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        cart.decrementProduct(product);
+        cart.decrementProduct(rawProduct);
         renderProducts();
       });
     }
@@ -201,7 +214,7 @@ function renderProducts() {
     if (plusBtn) {
       plusBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        cart.incrementProduct(product);
+        cart.incrementProduct(rawProduct);
         renderProducts();
       });
     }
@@ -218,12 +231,14 @@ function renderAddons() {
   if (!container) return;
 
   container.innerHTML = '';
+  const currentLang = getCurrentLang();
 
-  activeAddonsList.forEach((addon) => {
-    const isChecked = cart.isAddonSelected(addon.id);
+  activeAddonsList.forEach((rawAddon) => {
+    const addon = translateAddon(rawAddon, currentLang);
+    const isChecked = cart.isAddonSelected(rawAddon.id);
 
     const card = document.createElement('div');
-    card.id = `addon-card-${addon.id}`;
+    card.id = `addon-card-${rawAddon.id}`;
     card.className = `addon-card rounded-2xl p-4 bg-white border-2 transition-all duration-200 card-shadow flex items-center justify-between cursor-pointer btn-press select-none ${
       isChecked ? 'is-selected border-mustard bg-amber-50/40' : 'border-coffee/10 hover:border-mustard/40'
     }`;
@@ -258,7 +273,7 @@ function renderAddons() {
     `;
 
     const handleToggle = () => {
-      cart.toggleAddon(addon);
+      cart.toggleAddon(rawAddon);
       renderAddons();
     };
 
@@ -282,9 +297,11 @@ function renderDrinks() {
   if (!container) return;
 
   container.innerHTML = '';
+  const currentLang = getCurrentLang();
 
-  activeDrinksList.forEach((drink) => {
-    const qty = cart.getDrinkQuantity(drink.id);
+  activeDrinksList.forEach((rawDrink) => {
+    const drink = translateProduct(rawDrink, currentLang);
+    const qty = cart.getDrinkQuantity(rawDrink.id);
     const hasDrink = qty > 0;
 
     const card = document.createElement('div');
@@ -297,7 +314,7 @@ function renderDrinks() {
         <div class="relative w-full aspect-square rounded-xl sm:rounded-2xl overflow-hidden bg-creme-dark">
           <img src="${drink.image_url}" alt="${drink.name}" loading="lazy" class="w-full h-full object-cover">
           <span class="absolute top-1.5 right-1.5 sm:top-2.5 sm:right-2.5 px-2 py-0.5 rounded-full bg-emerald-500 text-white font-extrabold text-[9px] sm:text-[10px] shadow-sm uppercase">
-            ❄️ Gelada
+            ${t('drink_badge')}
           </span>
         </div>
 
@@ -332,12 +349,12 @@ function renderDrinks() {
     const plusBtn = card.querySelector('.btn-drink-plus');
 
     minusBtn.addEventListener('click', () => {
-      cart.decrementDrink(drink);
+      cart.decrementDrink(rawDrink);
       renderDrinks();
     });
 
     plusBtn.addEventListener('click', () => {
-      cart.incrementDrink(drink);
+      cart.incrementDrink(rawDrink);
       renderDrinks();
     });
 
@@ -363,20 +380,26 @@ function setupCartListener() {
       let labelParts = [];
       const panchosList = products || cart.getSelectedProductsList();
       const panchosTotal = totalPanchosCount !== undefined ? totalPanchosCount : cart.getTotalPanchosCount();
+      const currentLang = getCurrentLang();
 
       if (panchosTotal > 0) {
         if (panchosList.length === 1) {
-          labelParts.push(`${panchosList[0].quantity}x ${panchosList[0].product.name}`);
+          const transProd = translateProduct(panchosList[0].product, currentLang);
+          labelParts.push(`${panchosList[0].quantity}x ${transProd.name}`);
         } else {
-          labelParts.push(`${panchosTotal} Panchos`);
+          labelParts.push(t('sticky_plural_panchos', { n: panchosTotal }));
         }
       }
       if (drinks && drinks.length > 0) {
         const drinksCount = drinks.reduce((acc, d) => acc + d.quantity, 0);
-        labelParts.push(`${drinksCount} Bebida${drinksCount > 1 ? 's' : ''}`);
+        if (drinksCount === 1) {
+          labelParts.push(t('sticky_one_drink'));
+        } else {
+          labelParts.push(t('sticky_plural_drinks', { n: drinksCount }));
+        }
       }
       
-      barItemCount.innerHTML = `<span>🌭</span> ${labelParts.join(' + ') || '1 item selecionado'}`;
+      barItemCount.innerHTML = `<span>🌭</span> <span>${labelParts.join(' + ') || t('sticky_item_selected')}</span>`;
       barTotal.textContent = formattedTotal;
     } else {
       stickyBar.classList.add('translate-y-full');
@@ -395,6 +418,7 @@ function updateModalSummary(products, addons, drinks, formattedTotal) {
   const addonsWrapper = document.getElementById('summary-addons-wrapper');
   const drinksWrapper = document.getElementById('summary-drinks-wrapper');
   const totalPrice = document.getElementById('summary-total-price');
+  const currentLang = getCurrentLang();
 
   const selectedProductsList = products || cart.getSelectedProductsList();
 
@@ -403,12 +427,16 @@ function updateModalSummary(products, addons, drinks, formattedTotal) {
 
     if (selectedProductsList.length > 0) {
       selectedProductsList.forEach(item => {
-        const prod = item.product;
-        const unitPrice = (prod.promotional_price_gs !== null && prod.promotional_price_gs !== undefined)
-          ? Number(prod.promotional_price_gs)
-          : Number(prod.price_gs);
+        const rawProd = item.product;
+        const prod = translateProduct(rawProd, currentLang);
+        const unitPrice = (rawProd.promotional_price_gs !== null && rawProd.promotional_price_gs !== undefined)
+          ? Number(rawProd.promotional_price_gs)
+          : Number(rawProd.price_gs);
         const itemTotal = unitPrice * item.quantity;
-        const sausageText = prod.sausages_qty === 1 ? '1 salsicha' : `${prod.sausages_qty} salsichas`;
+        const sausageText = rawProd.sausages_qty === 1 
+          ? t('sausage_single') 
+          : t('sausage_plural', { n: rawProd.sausages_qty });
+        const artisanSaucesText = currentLang === 'es' ? 'salsas artesanales' : 'molhos artesanais';
 
         const row = document.createElement('div');
         row.className = 'flex items-center justify-between gap-3 pt-2.5 first:pt-0';
@@ -418,7 +446,7 @@ function updateModalSummary(products, addons, drinks, formattedTotal) {
               ${prod.name}
             </h4>
             <p class="text-[11px] text-coffee-soft">
-              ${sausageText} • molhos artesanais
+              ${sausageText} • ${artisanSaucesText}
             </p>
           </div>
 
@@ -434,12 +462,12 @@ function updateModalSummary(products, addons, drinks, formattedTotal) {
         `;
 
         row.querySelector('.btn-summary-prod-minus').addEventListener('click', () => {
-          cart.decrementProduct(prod);
+          cart.decrementProduct(rawProd);
           renderProducts();
         });
 
         row.querySelector('.btn-summary-prod-plus').addEventListener('click', () => {
-          cart.incrementProduct(prod);
+          cart.incrementProduct(rawProd);
           renderProducts();
         });
 
@@ -448,8 +476,8 @@ function updateModalSummary(products, addons, drinks, formattedTotal) {
     } else {
       productsWrapper.innerHTML = `
         <div class="py-1">
-          <h4 id="summary-product-name" class="font-black text-sm text-coffee">Nenhum pancho selecionado</h4>
-          <p id="summary-product-desc" class="text-xs text-coffee-soft">Selecione um pancho no cardápio</p>
+          <h4 id="summary-product-name" class="font-black text-sm text-coffee">${t('summary_no_pancho_title')}</h4>
+          <p id="summary-product-desc" class="text-xs text-coffee-soft">${t('summary_no_pancho_desc')}</p>
         </div>
       `;
     }
@@ -460,14 +488,17 @@ function updateModalSummary(products, addons, drinks, formattedTotal) {
     addonsWrapper.innerHTML = '';
     const totalPanchos = cart.getTotalPanchosCount();
     const multiplier = totalPanchos > 0 ? totalPanchos : 1;
-    if (addons && addons.length > 0) {
-      addons.forEach(a => {
+    const selectedAddons = addons || cart.getSelectedAddonsList();
+
+    if (selectedAddons && selectedAddons.length > 0) {
+      selectedAddons.forEach(rawA => {
+        const a = translateAddon(rawA, currentLang);
         const item = document.createElement('div');
         item.className = 'flex items-center justify-between text-xs text-coffee';
-        const itemTotal = a.price_gs * multiplier;
+        const itemTotal = rawA.price_gs * multiplier;
         item.innerHTML = `
           <span class="flex items-center gap-1.5 font-medium">
-            <span>${a.icon || '🧀'}</span> ${a.name} ${multiplier > 1 ? `(${multiplier}x)` : ''}
+            <span>${rawA.icon || '🧀'}</span> ${a.name} ${multiplier > 1 ? `(${multiplier}x)` : ''}
           </span>
           <span class="font-bold text-coffee">+${formatGs(itemTotal)}</span>
         `;
@@ -482,8 +513,11 @@ function updateModalSummary(products, addons, drinks, formattedTotal) {
   // Bebidas
   if (drinksWrapper) {
     drinksWrapper.innerHTML = '';
-    if (drinks && drinks.length > 0) {
-      drinks.forEach(d => {
+    const selectedDrinks = drinks || cart.getSelectedDrinksList();
+
+    if (selectedDrinks && selectedDrinks.length > 0) {
+      selectedDrinks.forEach(d => {
+        const drink = translateProduct(d.drink, currentLang);
         const item = document.createElement('div');
         item.className = 'flex items-center justify-between text-xs text-coffee font-medium';
         const drinkPrice = (d.drink.promotional_price_gs !== null && d.drink.promotional_price_gs !== undefined)
@@ -491,7 +525,7 @@ function updateModalSummary(products, addons, drinks, formattedTotal) {
           : Number(d.drink.price_gs);
         item.innerHTML = `
           <span class="flex items-center gap-1.5 font-bold text-emerald-800">
-            <span>🥤</span> ${d.quantity}x ${d.drink.name}
+            <span>🥤</span> ${d.quantity}x ${drink.name}
           </span>
           <span class="font-bold text-coffee">+${formatGs(drinkPrice * d.quantity)}</span>
         `;
@@ -504,7 +538,7 @@ function updateModalSummary(products, addons, drinks, formattedTotal) {
   }
 
   if (totalPrice) {
-    totalPrice.textContent = formattedTotal;
+    totalPrice.textContent = formattedTotal || cart.getFormattedTotalGs();
   }
 }
 
@@ -532,6 +566,33 @@ function setupEventListeners() {
   summaryPlusBtn?.addEventListener('click', () => {
     cart.incrementProduct();
     renderProducts();
+  });
+
+  // Alternador de Idiomas (ES 🇵🇾 / PT 🇧🇷)
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const selectedLang = btn.getAttribute('data-lang');
+      if (selectedLang) {
+        setLanguage(selectedLang);
+      }
+    });
+  });
+
+  // Listener para evento customizado de troca de idioma
+  window.addEventListener('language:changed', (e) => {
+    const lang = e.detail?.lang || getCurrentLang();
+    
+    // Atualiza status operacional com horário no idioma correto
+    storeStatus = getStoreStatus(APP_CONFIG.OPENING_TIME, APP_CONFIG.CLOSING_TIME, lang);
+    updateStatusBadgeUI(storeStatus);
+
+    // Re-renderiza todos os catálogos
+    renderProducts();
+    renderAddons();
+    renderDrinks();
+
+    // Re-sincroniza barra fixa e modal de checkout
+    cart.notify();
   });
 
   const openCheckout = () => {
@@ -603,14 +664,14 @@ function setupEventListeners() {
     }
 
     if (!cart.hasProduct() && cart.getTotalItemsCount() === 0) {
-      alert('Por favor, selecione um Pancho ou Bebida.');
+      alert(t('alert_select_product'));
       closeCheckout();
       return;
     }
 
-    const currentStatus = getStoreStatus(APP_CONFIG.OPENING_TIME, APP_CONFIG.CLOSING_TIME);
+    const currentStatus = getStoreStatus(APP_CONFIG.OPENING_TIME, APP_CONFIG.CLOSING_TIME, getCurrentLang());
     if (!currentStatus.isOpen) {
-      const proceed = confirm(`Atenção: O Pancho Mbarate abre às ${currentStatus.openingTime}. Deseja enviar o pedido antecipadamente para agendamento?`);
+      const proceed = confirm(t('confirm_closed_order', { time: currentStatus.openingTime }));
       if (!proceed) return;
     }
 
@@ -620,12 +681,29 @@ function setupEventListeners() {
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
       </svg>
-      GERANDO PEDIDO...
+      ${t('btn_loading_order')}
     `;
 
     try {
       const orderCode = cart.generateOrderCode();
       const effectivePickup = cart.getEffectivePickupTime();
+      const currentLang = getCurrentLang();
+
+      // Monta listas traduzidas para WhatsApp / display se desejado
+      const rawProducts = cart.getSelectedProductsList();
+      const translatedProducts = rawProducts.map(p => ({
+        ...p,
+        product: translateProduct(p.product, currentLang)
+      }));
+
+      const rawAddons = cart.getSelectedAddonsList();
+      const translatedAddons = rawAddons.map(a => translateAddon(a, currentLang));
+
+      const rawDrinks = cart.getSelectedDrinksList();
+      const translatedDrinks = rawDrinks.map(d => ({
+        ...d,
+        drink: translateProduct(d.drink, currentLang)
+      }));
 
       const orderPayload = {
         order_code: orderCode,
@@ -636,12 +714,12 @@ function setupEventListeners() {
         drinks_total_gs: cart.getDrinksTotalGs(),
         total_gs: cart.getTotalGs(),
         cmv_gs: cart.getCalculatedCmvGs(),
-        products: cart.getSelectedProductsList(),
+        products: rawProducts,
         product: cart.selectedProduct,
         productQuantity: cart.getTotalPanchosCount(),
         totalPanchosCount: cart.getTotalPanchosCount(),
-        addons: cart.getSelectedAddonsList(),
-        drinks: cart.getSelectedDrinksList()
+        addons: rawAddons,
+        drinks: rawDrinks
       };
 
       await createOrderInDB(orderPayload);
@@ -649,37 +727,53 @@ function setupEventListeners() {
       openWhatsApp({
         orderCode,
         customerName,
-        products: cart.getSelectedProductsList(),
-        product: cart.selectedProduct,
+        products: translatedProducts,
+        product: cart.selectedProduct ? translateProduct(cart.selectedProduct, currentLang) : null,
         productQuantity: cart.getTotalPanchosCount(),
-        addons: cart.getSelectedAddonsList(),
-        drinks: cart.getSelectedDrinksList(),
+        addons: translatedAddons,
+        drinks: translatedDrinks,
         totalGs: cart.getTotalGs(),
-        pickupTime: effectivePickup
+        pickupTime: effectivePickup,
+        lang: currentLang
       });
 
       closeCheckout();
 
     } catch (err) {
       console.error('Erro ao processar pedido:', err);
+      const currentLang = getCurrentLang();
+      const rawProducts = cart.getSelectedProductsList();
+      const translatedProducts = rawProducts.map(p => ({
+        ...p,
+        product: translateProduct(p.product, currentLang)
+      }));
+      const rawAddons = cart.getSelectedAddonsList();
+      const translatedAddons = rawAddons.map(a => translateAddon(a, currentLang));
+      const rawDrinks = cart.getSelectedDrinksList();
+      const translatedDrinks = rawDrinks.map(d => ({
+        ...d,
+        drink: translateProduct(d.drink, currentLang)
+      }));
+
       openWhatsApp({
         orderCode: cart.generateOrderCode(),
         customerName,
-        products: cart.getSelectedProductsList(),
-        product: cart.selectedProduct,
+        products: translatedProducts,
+        product: cart.selectedProduct ? translateProduct(cart.selectedProduct, currentLang) : null,
         productQuantity: cart.getTotalPanchosCount(),
-        addons: cart.getSelectedAddonsList(),
-        drinks: cart.getSelectedDrinksList(),
+        addons: translatedAddons,
+        drinks: translatedDrinks,
         totalGs: cart.getTotalGs(),
-        pickupTime: cart.getEffectivePickupTime()
+        pickupTime: cart.getEffectivePickupTime(),
+        lang: currentLang
       });
       closeCheckout();
     } finally {
       confirmWhatsappBtn.disabled = false;
       confirmWhatsappBtn.innerHTML = `
-        <span>PEDIR NO WHATSAPP</span>
+        <span data-i18n="btn_confirm_whatsapp">${t('btn_confirm_whatsapp')}</span>
         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.299.144.347.491 1.2.534 1.288.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.179.182-.077.357.101.174.45 0.742.966 1.202.664.591 1.224.774 1.398.861.173.087.275.072.376-.043.101-.116.433-.506.549-.679.116-.174.231-.145.39-.087s1.011.477 1.184.564c.173.087.289.13.332.202.044.073.044.42-.1 0.825z"/>
+          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.299.144.347.491 1.2.534 1.288.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.179.182-.077.357.101.174.45 0.742.966 1.202.664.591 1.224.774 1.398.861.173.087.289.13.332.202.044.073.044.42-.1 0.825z"/>
         </svg>
       `;
     }

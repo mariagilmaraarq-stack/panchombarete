@@ -52,8 +52,9 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Supabase JS SDK (CDN) -->
+  <!-- Supabase JS SDK (CDN) & Dinâmico Env -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/env.js"></script>
 </head>
 <body class="bg-creme text-coffee min-h-screen font-sans antialiased selection:bg-mustard selection:text-coffee">
 
@@ -206,14 +207,13 @@
 
       <!-- Rodapé da Sidebar (Usuário e Logout) -->
       <div class="p-4 border-t border-coffee/10 bg-creme/40 space-y-3">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span id="pricing-session-badge" class="text-[11px] font-black text-coffee truncate max-w-[140px]">
-              ● Admin Conectado
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 overflow-hidden">
+            <span id="pricing-session-badge" class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300">
+              ● Supabase Conectado
             </span>
           </div>
-          <button type="button" id="btn-pricing-logout" class="px-2.5 py-1 rounded-xl bg-redSport-light text-redSport hover:bg-redSport hover:text-white transition-colors text-[10px] font-black" title="Sair da Sessão">
+          <button type="button" id="btn-pricing-logout" class="px-2.5 py-1 rounded-xl bg-redSport-light text-redSport hover:bg-redSport hover:text-white transition-colors text-[10px] font-black shrink-0" title="Sair da Sessão">
             Sair
           </button>
         </div>

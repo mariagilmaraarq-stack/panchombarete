@@ -266,6 +266,10 @@ class CartState {
       }));
     }
   }
+
+  notify() {
+    this.notifyUpdate();
+  }
 }
 
 export const cart = new CartState();

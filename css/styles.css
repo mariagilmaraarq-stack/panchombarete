@@ -230,3 +230,18 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   outline: 3px solid var(--color-mustard);
   outline-offset: 2px;
 }
+
+/* Language Switcher */
+#language-switcher {
+  user-select: none;
+}
+.lang-btn {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lang-btn.is-active {
+  background-color: var(--color-mustard) !important;
+  color: var(--color-coffee) !important;
+  font-weight: 900 !important;
+  box-shadow: 0 1px 3px rgba(42, 8, 8, 0.15);
+}
+
