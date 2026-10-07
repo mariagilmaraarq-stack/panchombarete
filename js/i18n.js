@@ -90,15 +90,15 @@ export const TRANSLATIONS = {
     btn_gmaps: 'Google Maps 🗺️',
     btn_waze: 'Waze 🚗',
     map_pin_badge: 'Mostrador PANCHO MBARATE • Ciudad del Este',
-    map_hours_info: '🕒 Horario de Retiro: 17:00 a 23:45',
+    map_hours_info: '🕒 Horario de Retiro: 19:00 a 23:00',
     map_pickup_info: '📍 Julio Cesar Riquelme • Retiro Rápido',
     
     // Footer
     footer_about: 'El auténtico pancho con verdadero sabor en la Triple Frontera. Pan calentito, queso fundido, salsas artesanales y hasta 3 salchichas de primera calidad.',
     footer_quick_links: 'Enlaces Rápidos',
     footer_hours_title: 'Horario de Atención',
-    footer_days_regular: 'Martes a Domingo',
-    footer_days_monday: 'Lunes',
+    footer_days_regular: 'Martes a Sábado',
+    footer_days_monday: 'Domingo y Lunes',
     footer_closed_text: 'Cerrado',
     footer_distance_hint: '🛵 Retiro en el mostrador a solo 5 min del Puente de la Amistad en CDE.',
     footer_location_title: 'Ubicación',
@@ -137,7 +137,8 @@ export const TRANSLATIONS = {
     
     // Alertas y Confirmaciones
     alert_select_product: 'Por favor, seleccioná un Pancho o Bebida.',
-    confirm_closed_order: 'Atención: Pancho Mbarate abre a las {time}. ¿Deseás enviar el pedido con anticipación para programarlo?'
+    confirm_closed_order: 'Atención: Pancho Mbarate abre a las {time}. ¿Deseás enviar el pedido con anticipación para programarlo?',
+    confirm_manually_closed: 'Atención: Pancho Mbarate está CERRADO hoy. ¿Deseás enviar el pedido con anticipación para programarlo?'
   },
 
   pt: {
@@ -194,15 +195,15 @@ export const TRANSLATIONS = {
     btn_gmaps: 'Google Maps 🗺️',
     btn_waze: 'Waze 🚗',
     map_pin_badge: 'Balcão PANCHO MBARATE • Ciudad del Este',
-    map_hours_info: '🕒 Horário de Retirada: 17:00 às 23:45',
+    map_hours_info: '🕒 Horário de Retirada: 19:00 às 23:00',
     map_pickup_info: '📍 Julio Cesar Riquelme • Retirada Rápida',
     
     // Footer
     footer_about: 'O autêntico pancho com sabor de verdade na Tríplice Fronteira. Pão quentinho, queijo derretido, molhos artesanais e até 3 salsichas de primeira linha.',
     footer_quick_links: 'Links Rápidos',
     footer_hours_title: 'Horário de Atendimento',
-    footer_days_regular: 'Terça a Domingo',
-    footer_days_monday: 'Segunda-feira',
+    footer_days_regular: 'Terça a Sábado',
+    footer_days_monday: 'Domingo e Segunda',
     footer_closed_text: 'Fechado',
     footer_distance_hint: '🛵 Retirada no balcão a apenas 5 min da Ponte da Amizade em CDE.',
     footer_location_title: 'Localização',
@@ -241,7 +242,8 @@ export const TRANSLATIONS = {
     
     // Alertas e Confirmações
     alert_select_product: 'Por favor, selecione um Pancho ou Bebida.',
-    confirm_closed_order: 'Atenção: O Pancho Mbarate abre às {time}. Deseja enviar o pedido antecipadamente para agendamento?'
+    confirm_closed_order: 'Atenção: O Pancho Mbarate abre às {time}. Deseja enviar o pedido antecipadamente para agendamento?',
+    confirm_manually_closed: 'Atenção: O Pancho Mbarate está FECHADO hoje. Deseja enviar o pedido antecipadamente para agendamento?'
   }
 };
 

@@ -263,12 +263,39 @@ export async function fetchStoreSettingsFromDB() {
       if (data.address) APP_CONFIG.ADDRESS = data.address;
       if (data.maps_url) APP_CONFIG.GOOGLE_MAPS_URL = data.maps_url;
       if (data.instagram_url) APP_CONFIG.INSTAGRAM_URL = data.instagram_url;
+      if (typeof data.active === 'boolean') APP_CONFIG.STORE_ACTIVE = data.active;
       return data;
     }
   } catch (err) {
     console.warn('Erro ao ler settings do Supabase:', err);
   }
   return null;
+}
+
+/**
+ * Alterna manualmente o status de atendimento da loja (Aberta / Fechada)
+ */
+export async function toggleStoreActiveInDB(isActive) {
+  const sb = getSupabase();
+  APP_CONFIG.STORE_ACTIVE = isActive;
+  if (sb) {
+    try {
+      const { data: existing } = await sb.from('settings').select('id').limit(1).maybeSingle();
+      if (existing?.id) {
+        const { data, error } = await sb
+          .from('settings')
+          .update({ active: isActive, updated_at: new Date().toISOString() })
+          .eq('id', existing.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return { success: true, active: isActive, data };
+      }
+    } catch (e) {
+      console.warn('Erro ao alterar status da loja no Supabase:', e);
+    }
+  }
+  return { success: true, active: isActive };
 }
 
 /**
@@ -285,7 +312,7 @@ export async function saveStoreSettingsToDB(settings) {
     address: settings.address || APP_CONFIG.ADDRESS,
     maps_url: settings.maps_url || APP_CONFIG.GOOGLE_MAPS_URL,
     instagram_url: settings.instagram_url || APP_CONFIG.INSTAGRAM_URL,
-    active: true,
+    active: typeof settings.active === 'boolean' ? settings.active : (typeof APP_CONFIG.STORE_ACTIVE === 'boolean' ? APP_CONFIG.STORE_ACTIVE : true),
     updated_at: new Date().toISOString()
   };
 
@@ -295,6 +322,7 @@ export async function saveStoreSettingsToDB(settings) {
   if (payload.closing_time) APP_CONFIG.CLOSING_TIME = payload.closing_time;
   if (payload.address) APP_CONFIG.ADDRESS = payload.address;
   if (payload.maps_url) APP_CONFIG.GOOGLE_MAPS_URL = payload.maps_url;
+  if (typeof payload.active === 'boolean') APP_CONFIG.STORE_ACTIVE = payload.active;
 
   if (sb) {
     try {

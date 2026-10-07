@@ -27,7 +27,8 @@ import {
   saveStoreSettingsToDB,
   fetchStoreSettingsFromDB,
   resetSupabaseClient,
-  testSupabaseConnection 
+  testSupabaseConnection,
+  toggleStoreActiveInDB 
 } from './supabase.js';
 
 let currentOrders = [];
@@ -1420,6 +1421,77 @@ function setupSettingsForm() {
   const sbUrlInput = document.getElementById('setting-sb-url');
   const sbKeyInput = document.getElementById('setting-sb-key');
 
+  let isStoreActive = true;
+
+  function renderStoreStatusUI(active) {
+    isStoreActive = active;
+    
+    // 1. Botão do Cabeçalho Superior
+    const headerBtn = document.getElementById('btn-header-store-status');
+    const headerDot = document.getElementById('header-store-status-dot');
+    const headerText = document.getElementById('header-store-status-text');
+
+    if (headerBtn && headerDot && headerText) {
+      if (active) {
+        headerBtn.className = 'px-3.5 py-1.5 rounded-2xl font-black text-xs transition-all shadow-sm flex items-center gap-2 border bg-emerald-100 text-emerald-900 border-emerald-300 hover:scale-105 cursor-pointer';
+        headerDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse';
+        headerText.textContent = 'LOJA ABERTA';
+        headerBtn.title = 'Loja Aberta. Clique para fechar a loja hoje.';
+      } else {
+        headerBtn.className = 'px-3.5 py-1.5 rounded-2xl font-black text-xs transition-all shadow-sm flex items-center gap-2 border bg-red-100 text-red-900 border-red-300 hover:scale-105 cursor-pointer';
+        headerDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500';
+        headerText.textContent = 'LOJA FECHADA';
+        headerBtn.title = 'Loja Fechada. Clique para reabrir a loja.';
+      }
+    }
+
+    // 2. Card na Aba de Configurações
+    const card = document.getElementById('store-operation-card');
+    const badge = document.getElementById('settings-store-status-badge');
+    const toggleBtn = document.getElementById('btn-toggle-store-status');
+
+    if (card && badge && toggleBtn) {
+      if (active) {
+        card.className = 'p-4 rounded-2xl border-2 border-emerald-300 bg-emerald-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all';
+        badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500 text-white shadow-sm';
+        badge.textContent = 'ABERTA';
+        toggleBtn.className = 'px-4 py-2.5 rounded-xl font-black text-xs text-white bg-redSport hover:bg-red-700 shadow-md transition-all flex items-center justify-center gap-2 btn-press whitespace-nowrap cursor-pointer';
+        toggleBtn.innerHTML = '<span>🔴 FECHAR LOJA HOJE</span>';
+      } else {
+        card.className = 'p-4 rounded-2xl border-2 border-red-300 bg-red-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all';
+        badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-600 text-white shadow-sm';
+        badge.textContent = 'FECHADA HOJE';
+        toggleBtn.className = 'px-4 py-2.5 rounded-xl font-black text-xs text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition-all flex items-center justify-center gap-2 btn-press whitespace-nowrap cursor-pointer';
+        toggleBtn.innerHTML = '<span>🟢 ABRIR LOJA AGORA</span>';
+      }
+    }
+  }
+
+  async function handleToggleStore() {
+    const willClose = isStoreActive;
+    const msg = willClose
+      ? 'Deseja FECHAR a loja hoje?\n\nO cardápio público mostrará o aviso de que a loja não abrirá hoje.'
+      : 'Deseja ABRIR a loja agora?\n\nO cardápio voltará ao funcionamento normal conforme os horários programados.';
+    
+    if (!confirm(msg)) return;
+
+    const newStatus = !isStoreActive;
+    renderStoreStatusUI(newStatus);
+
+    try {
+      await toggleStoreActiveInDB(newStatus);
+      showToast(newStatus ? 'Loja reaberta com sucesso!' : 'Loja fechada com sucesso!', 'success');
+    } catch (err) {
+      console.error('Erro ao atualizar status da loja:', err);
+      showToast('Erro ao atualizar status da loja no Supabase.', 'error');
+    }
+  }
+
+  document.getElementById('btn-header-store-status')?.addEventListener('click', handleToggleStore);
+  document.getElementById('btn-toggle-store-status')?.addEventListener('click', handleToggleStore);
+
+  renderStoreStatusUI(APP_CONFIG.STORE_ACTIVE !== false);
+
   if (whatsappInput) whatsappInput.value = APP_CONFIG.WHATSAPP_NUMBER;
   if (openingInput) openingInput.value = APP_CONFIG.OPENING_TIME;
   if (closingInput) closingInput.value = APP_CONFIG.CLOSING_TIME;
@@ -1436,6 +1508,9 @@ function setupSettingsForm() {
       if (closingInput && dbSettings.closing_time) closingInput.value = dbSettings.closing_time;
       if (addressInput && dbSettings.address) addressInput.value = dbSettings.address;
       if (mapsInput && dbSettings.maps_url) mapsInput.value = dbSettings.maps_url;
+      if (typeof dbSettings.active === 'boolean') {
+        renderStoreStatusUI(dbSettings.active);
+      }
     }
   });
 
@@ -1484,7 +1559,8 @@ function setupSettingsForm() {
       opening_time: newOpening || APP_CONFIG.OPENING_TIME,
       closing_time: newClosing || APP_CONFIG.CLOSING_TIME,
       address: newAddress || APP_CONFIG.ADDRESS,
-      maps_url: newMaps || APP_CONFIG.GOOGLE_MAPS_URL
+      maps_url: newMaps || APP_CONFIG.GOOGLE_MAPS_URL,
+      active: isStoreActive
     };
     await saveStoreSettingsToDB(storeSettingsPayload);
 

@@ -101,8 +101,8 @@ CREATE TABLE IF NOT EXISTS public.settings (
     address TEXT NOT NULL,
     maps_url TEXT,
     instagram_url TEXT,
-    opening_time TEXT NOT NULL DEFAULT '17:00',
-    closing_time TEXT NOT NULL DEFAULT '23:45',
+    opening_time TEXT NOT NULL DEFAULT '19:00',
+    closing_time TEXT NOT NULL DEFAULT '23:00',
     active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -187,8 +187,8 @@ VALUES
     'Av. Adrián Jara c/ Piribebuy, Microcentro — Ciudad del Este, Paraguay',
     'https://maps.google.com/?q=Ciudad+del+Este+Paraguay',
     'https://instagram.com/panchombarate',
-    '17:00',
-    '23:45',
+    '19:00',
+    '23:00',
     true
 )
 ON CONFLICT DO NOTHING;

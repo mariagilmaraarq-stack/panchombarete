@@ -61,6 +61,7 @@ async function initStore() {
       }
       if (settings.opening_time) APP_CONFIG.OPENING_TIME = settings.opening_time;
       if (settings.closing_time) APP_CONFIG.CLOSING_TIME = settings.closing_time;
+      if (typeof settings.active === 'boolean') APP_CONFIG.STORE_ACTIVE = settings.active;
     }
   } catch (e) {
     console.info('Configurações padrão ativas.');
@@ -87,14 +88,16 @@ function updateStatusBadgeUI(status) {
 
   if (badgeEl && textEl) {
     textEl.textContent = status.statusBadgeText;
+    badgeEl.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide shadow-sm ${status.statusClass || (status.isOpen ? 'bg-emerald-500 text-white' : 'bg-amber-600 text-white')}`;
+
     if (status.isOpen) {
-      badgeEl.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide shadow-sm bg-emerald-500 text-white';
       if (closedBanner) closedBanner.classList.add('hidden');
     } else {
-      badgeEl.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide shadow-sm bg-amber-600 text-white';
       if (closedBanner) {
         closedBanner.classList.remove('hidden');
-        if (reopenTimeEl) reopenTimeEl.textContent = status.openingTime;
+        if (reopenTimeEl) {
+          reopenTimeEl.textContent = status.openingTime;
+        }
       }
     }
   }
@@ -737,7 +740,10 @@ function setupEventListeners() {
 
     const currentStatus = getStoreStatus(APP_CONFIG.OPENING_TIME, APP_CONFIG.CLOSING_TIME, getCurrentLang());
     if (!currentStatus.isOpen) {
-      const proceed = confirm(t('confirm_closed_order', { time: currentStatus.openingTime }));
+      const confirmMsg = currentStatus.isManuallyClosed
+        ? (t('confirm_manually_closed') || 'Atenção: A loja está FECHADA hoje. Deseja enviar o pedido antecipadamente para agendamento?')
+        : t('confirm_closed_order', { time: currentStatus.openingTime });
+      const proceed = confirm(confirmMsg);
       if (!proceed) return;
     }
 

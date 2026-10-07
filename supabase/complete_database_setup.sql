@@ -92,8 +92,8 @@ CREATE TABLE IF NOT EXISTS public.settings (
     address TEXT NOT NULL DEFAULT 'Julio Cesar Riquelme (F8QH+75H) — Ciudad del Este 100169, Paraguay',
     maps_url TEXT DEFAULT 'https://maps.google.com/?q=-25.51158425546612,-54.6720151',
     instagram_url TEXT DEFAULT 'https://instagram.com/panchombarate',
-    opening_time TEXT NOT NULL DEFAULT '17:00',
-    closing_time TEXT NOT NULL DEFAULT '23:45',
+    opening_time TEXT NOT NULL DEFAULT '19:00',
+    closing_time TEXT NOT NULL DEFAULT '23:00',
     active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -376,8 +376,8 @@ VALUES (
     'Julio Cesar Riquelme (F8QH+75H) — Ciudad del Este 100169, Paraguay',
     'https://maps.google.com/?q=-25.51158425546612,-54.6720151',
     'https://instagram.com/panchombarate',
-    '17:00',
-    '23:45'
+    '19:00',
+    '23:00'
 )
 ON CONFLICT DO NOTHING;
 
