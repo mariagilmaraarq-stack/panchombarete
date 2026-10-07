@@ -13,9 +13,18 @@ import {
 export const PRODUCT_CATEGORIES = {
   alimento: [
     'Cachorro-quente',
+    'Combos',
     'Lanches',
     'Porções',
     'Adicionais',
+    'Outros'
+  ],
+  combo: [
+    'Combos',
+    'Combo Individual',
+    'Combo Duplo',
+    'Combo Família',
+    'Combo Promocional',
     'Outros'
   ],
   bebida: [
@@ -106,6 +115,25 @@ export const DEFAULT_PRODUCTS = [
     category: 'Cachorro-quente',
     active: true,
     sort_order: 3
+  },
+  {
+    id: 'prod-combo-mbarate',
+    name: 'Combo Pancho Mbarate',
+    name_es: 'Combo Pancho Mbarate',
+    slug: 'combo-pancho-mbarate',
+    description: '1 Pancho Mbarate (2 salsichas completas) + Batata palha extra + 1 Coca-Cola 350ml trincando de gelada.',
+    description_es: '1 Pancho Mbarate (2 salchichas completas) + Papas al hilo extra + 1 Coca-Cola 350ml bien helada.',
+    price_gs: 25000,
+    promotional_price_gs: null,
+    cmv_gs: 12000,
+    sausages_qty: 2,
+    image_url: 'assets/images/pancho_mbarate.jpg',
+    highlight: '🍟 COMBO TOP',
+    highlight_es: '🍟 COMBO TOP',
+    type: 'combo',
+    category: 'Combos',
+    active: true,
+    sort_order: 4
   }
 ];
 
@@ -326,14 +354,14 @@ export async function getActiveProducts() {
   try {
     const dbProducts = await fetchActiveProductsFromDB();
     if (dbProducts && dbProducts.length > 0) {
-      return dbProducts.filter(p => p.type === 'alimento' || !p.type);
+      return dbProducts.filter(p => p.type === 'alimento' || p.type === 'combo' || !p.type);
     }
   } catch (err) {
     console.info('Usando alimentos locais.');
   }
 
   const local = getLocalProducts();
-  const activeFoods = local.filter(p => p.active !== false && (p.type === 'alimento' || !p.type));
+  const activeFoods = local.filter(p => p.active !== false && (p.type === 'alimento' || p.type === 'combo' || !p.type));
   if (activeFoods.length > 0) return activeFoods;
 
   return DEFAULT_PRODUCTS;

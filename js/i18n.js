@@ -64,13 +64,14 @@ export const TRANSLATIONS = {
     
     // Sección Menú / Panchos
     section_menu_tag: 'Menú Oficial',
-    section_menu_title: 'NUESTROS PANCHOS',
+    section_menu_title: 'NUESTROS PANCHOS & COMBOS',
     section_menu_desc: 'Armá con la cantidad deseada y sumá agregados a tu gusto.',
     section_menu_hint: 'Elegí y ajustá la cantidad (+/-)',
     card_unit: 'Unidad',
     btn_select: '+ Elegir',
     sausage_single: '1 Salchicha',
     sausage_plural: '{n} Salchichas',
+    combo_badge: '🍟 Combo Completo',
     
     // Sección Agregados
     section_addons_step: 'Paso 02 • Potenciar',
@@ -162,13 +163,14 @@ export const TRANSLATIONS = {
     
     // Seção Cardápio / Panchos
     section_menu_tag: 'Cardápio Oficial',
-    section_menu_title: 'NOSSOS PANCHOS',
+    section_menu_title: 'NOSSOS PANCHOS & COMBOS',
     section_menu_desc: 'Monte com a quantidade desejada e adicione extras ao seu gosto.',
     section_menu_hint: 'Escolha e ajuste a quantidade (+/-)',
     card_unit: 'Unidade',
     btn_select: '+ Escolher',
     sausage_single: '1 Salsicha',
     sausage_plural: '{n} Salsichas',
+    combo_badge: '🍟 Combo Completo',
     
     // Seção Adicionais
     section_addons_step: 'Passo 02 • Turbinar',
@@ -271,6 +273,18 @@ export const PRODUCT_TRANSLATIONS = {
       name: 'Pancho Mbarate Guasu',
       description: 'Pão macio aquecido, maionese artesanal da casa, 3 salsichas de primeira linha, ketchup, mostarda, ervilhas, milho fresco, vinagrete caseiro, queijo e batata palha fininha crocante.',
       highlight: '💪 PARA QUEM TEM FOME'
+    }
+  },
+  'combo-pancho-mbarate': {
+    es: {
+      name: 'Combo Pancho Mbarate',
+      description: '1 Pancho Mbarate (2 salchichas completas) + Papas al hilo extra + 1 Coca-Cola 350ml bien helada.',
+      highlight: '🍟 COMBO TOP'
+    },
+    pt: {
+      name: 'Combo Pancho Mbarate',
+      description: '1 Pancho Mbarate (2 salsichas completas) + Batata palha extra + 1 Coca-Cola 350ml trincando de gelada.',
+      highlight: '🍟 COMBO TOP'
     }
   },
   'coca-cola-350ml': {

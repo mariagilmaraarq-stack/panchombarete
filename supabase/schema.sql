@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS public.products (
     description_es TEXT,
     price_gs NUMERIC NOT NULL CHECK (price_gs >= 0),
     promotional_price_gs NUMERIC CHECK (promotional_price_gs >= 0),
-    type TEXT NOT NULL DEFAULT 'alimento' CHECK (type IN ('alimento', 'bebida')),
+    type TEXT NOT NULL DEFAULT 'alimento' CHECK (type IN ('alimento', 'bebida', 'combo')),
     category TEXT NOT NULL DEFAULT 'Cachorro-quente',
     cmv_gs NUMERIC NOT NULL DEFAULT 0 CHECK (cmv_gs >= 0),
     sausages_qty INTEGER NOT NULL DEFAULT 1,
@@ -36,6 +36,8 @@ ALTER TABLE public.products ADD COLUMN IF NOT EXISTS promotional_price_gs NUMERI
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS name_es TEXT;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS description_es TEXT;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS highlight_es TEXT;
+ALTER TABLE public.products DROP CONSTRAINT IF EXISTS products_type_check;
+ALTER TABLE public.products ADD CONSTRAINT products_type_check CHECK (type IN ('alimento', 'bebida', 'combo'));
 
 
 -- 2. TABELA: ADICIONAIS (add_ons)

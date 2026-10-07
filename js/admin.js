@@ -531,18 +531,21 @@ function showToast(message, icon = '✓') {
 function updateProductKpis() {
   const totalEl = document.getElementById('stat-products-total');
   const foodsEl = document.getElementById('stat-products-foods');
+  const combosEl = document.getElementById('stat-products-combos');
   const drinksEl = document.getElementById('stat-products-drinks');
   const activeEl = document.getElementById('stat-products-active');
   const inactiveEl = document.getElementById('stat-products-inactive');
 
   const total = allProducts.length;
-  const foods = allProducts.filter(p => p.type === 'alimento' || !p.type).length;
+  const foods = allProducts.filter(p => p.type === 'alimento').length;
+  const combos = allProducts.filter(p => p.type === 'combo').length;
   const drinks = allProducts.filter(p => p.type === 'bebida').length;
   const active = allProducts.filter(p => p.active !== false).length;
   const inactive = allProducts.filter(p => p.active === false).length;
 
   if (totalEl) totalEl.textContent = total;
   if (foodsEl) foodsEl.textContent = foods;
+  if (combosEl) combosEl.textContent = combos;
   if (drinksEl) drinksEl.textContent = drinks;
   if (activeEl) activeEl.textContent = active;
   if (inactiveEl) inactiveEl.textContent = `${inactive} inativo(s)`;
@@ -562,8 +565,9 @@ function populateFilterCategories() {
     if (p.category) categories.add(p.category);
   });
 
-  PRODUCT_CATEGORIES.alimento.forEach(c => categories.add(c));
-  PRODUCT_CATEGORIES.bebida.forEach(c => categories.add(c));
+  PRODUCT_CATEGORIES.alimento?.forEach(c => categories.add(c));
+  PRODUCT_CATEGORIES.combo?.forEach(c => categories.add(c));
+  PRODUCT_CATEGORIES.bebida?.forEach(c => categories.add(c));
 
   const optionsHtml = ['<option value="ALL">Todas as Categorias</option>'];
   Array.from(categories).sort().forEach(cat => {
@@ -653,10 +657,13 @@ export function renderProductsTable() {
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-creme/50 transition-colors';
 
-    const isFood = product.type === 'alimento' || !product.type;
-    const defaultIcon = isFood ? '🌭' : '🥤';
-    const typeLabel = isFood ? '🌭 Alimento' : '🥤 Bebida';
-    const typeBadgeClass = isFood ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800';
+    const isCombo = product.type === 'combo';
+    const isFood = product.type === 'alimento' || (!product.type && !isCombo);
+    const defaultIcon = isCombo ? '🍟' : (isFood ? '🌭' : '🥤');
+    const typeLabel = isCombo ? '🍟 Combo' : (isFood ? '🌭 Alimento' : '🥤 Bebida');
+    const typeBadgeClass = isCombo
+      ? 'bg-purple-100 text-purple-800 border border-purple-300 font-black'
+      : (isFood ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800');
 
     const imageMarkup = product.image_url
       ? `<img src="${resolveImageUrl(product.image_url)}" alt="${product.name}" class="w-12 h-12 rounded-xl object-cover border border-coffee/10 bg-white shadow-sm" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'text-2xl\\'>${defaultIcon}</span>'">`

@@ -134,9 +134,9 @@ function renderProducts() {
             </span>
           ` : ''}
 
-          <!-- Badge de Salsichas -->
+          <!-- Badge de Salsichas ou Combo -->
           <span class="absolute bottom-2.5 right-2.5 px-2.5 py-1 rounded-full bg-coffee/85 backdrop-blur-sm text-mustard font-extrabold text-[11px] shadow-sm">
-            🌭 ${sausageText}
+            ${rawProduct.type === 'combo' ? (t('combo_badge') || '🍟 Combo Completo') : `🌭 ${sausageText}`}
           </span>
         </div>
 
