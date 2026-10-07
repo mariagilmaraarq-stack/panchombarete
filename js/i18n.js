@@ -341,7 +341,24 @@ export function t(key, params = {}) {
  */
 export function translateProduct(product, lang = currentLang) {
   if (!product) return product;
+
   const match = PRODUCT_TRANSLATIONS[product.slug] || PRODUCT_TRANSLATIONS[product.id];
+
+  if (lang === 'es') {
+    const hasCustomNameEs = product.name_es && product.name_es.trim() !== '';
+    const hasCustomDescEs = product.description_es !== undefined && product.description_es !== null && product.description_es.trim() !== '';
+    const hasCustomHighlightEs = product.highlight_es !== undefined && product.highlight_es !== null && product.highlight_es.trim() !== '';
+
+    const dictEs = match?.es;
+
+    return {
+      ...product,
+      name: hasCustomNameEs ? product.name_es.trim() : (dictEs?.name || product.name),
+      description: hasCustomDescEs ? product.description_es.trim() : (dictEs?.description !== undefined ? dictEs.description : product.description),
+      highlight: hasCustomHighlightEs ? product.highlight_es.trim() : (dictEs?.highlight !== undefined ? dictEs.highlight : product.highlight)
+    };
+  }
+
   if (match && match[lang]) {
     // Se o texto for o padrão original de fábrica em PT ou ES, usa a tradução respectiva.
     // Se o gestor editou o nome ou a descrição no painel, PRESERVA o conteúdo customizado!

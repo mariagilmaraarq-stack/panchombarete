@@ -16,6 +16,7 @@ import {
   DEFAULT_ADDONS, 
   DEFAULT_DRINKS 
 } from './products.js';
+import { PRODUCT_TRANSLATIONS } from './i18n.js';
 import { 
   getSupabase, 
   isSupabaseConnected,
@@ -613,11 +614,11 @@ export function renderProductsTable() {
   const statusFilter = document.getElementById('filter-product-status')?.value || 'ALL';
 
   const filtered = allProducts.filter(p => {
-    // Filtro de busca
+    // Filtro de busca (suporta termos em português ou espanhol)
     if (searchQuery) {
-      const nameMatch = (p.name || '').toLowerCase().includes(searchQuery);
+      const nameMatch = (p.name || '').toLowerCase().includes(searchQuery) || (p.name_es || '').toLowerCase().includes(searchQuery);
       const catMatch = (p.category || '').toLowerCase().includes(searchQuery);
-      const descMatch = (p.description || '').toLowerCase().includes(searchQuery);
+      const descMatch = (p.description || '').toLowerCase().includes(searchQuery) || (p.description_es || '').toLowerCase().includes(searchQuery);
       if (!nameMatch && !catMatch && !descMatch) return false;
     }
 
@@ -687,8 +688,10 @@ export function renderProductsTable() {
           <div class="flex items-center gap-1.5 flex-wrap">
             <span class="font-black text-xs sm:text-sm text-coffee">${product.name}</span>
             ${product.highlight ? `<span class="px-2 py-0.5 rounded-full bg-redSport-light text-redSport font-black text-[9px] uppercase tracking-wider">${product.highlight}</span>` : ''}
+            ${(product.name_es || product.description_es) ? `<span class="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-black text-[9px] border border-emerald-300" title="Tradução em Espanhol configurada">🇵🇾 ES</span>` : ''}
           </div>
           ${product.description ? `<p class="text-[11px] text-coffee-soft line-clamp-1 max-w-xs sm:max-w-md">${product.description}</p>` : ''}
+          ${product.description_es ? `<p class="text-[10px] text-coffee-soft/75 italic line-clamp-1 max-w-xs sm:max-w-md">🇵🇾 ${product.description_es}</p>` : ''}
         </div>
       </td>
       <td class="py-3 px-3">
@@ -787,6 +790,14 @@ function openAddProductModal() {
   const statusActive = form.querySelector('input[name="product_status"][value="true"]');
   if (statusActive) statusActive.checked = true;
 
+  // Limpa campos em espanhol
+  const nameEsInput = document.getElementById('product-name-es');
+  const descEsInput = document.getElementById('product-description-es');
+  const highlightEsInput = document.getElementById('product-highlight-es');
+  if (nameEsInput) nameEsInput.value = '';
+  if (descEsInput) descEsInput.value = '';
+  if (highlightEsInput) highlightEsInput.value = '';
+
   // Imagem
   if (imgPreview) {
     imgPreview.src = '';
@@ -829,11 +840,21 @@ function openEditProductModal(productId) {
   // Categorias para o tipo
   populateFormCategories(type, product.category || '');
 
-  // Campos básicos
+  // Campos básicos (Português)
   document.getElementById('product-name').value = product.name || '';
   document.getElementById('product-description').value = product.description || '';
   document.getElementById('product-price').value = product.price_gs ?? '';
   document.getElementById('product-promotional-price').value = product.promotional_price_gs ?? '';
+
+  // Campos em Espanhol (carrega do produto ou da tradução padrão)
+  const defaultTrans = PRODUCT_TRANSLATIONS[product.slug]?.es || PRODUCT_TRANSLATIONS[product.id]?.es || {};
+  const nameEsField = document.getElementById('product-name-es');
+  const descEsField = document.getElementById('product-description-es');
+  const highlightEsField = document.getElementById('product-highlight-es');
+
+  if (nameEsField) nameEsField.value = product.name_es || defaultTrans.name || '';
+  if (descEsField) descEsField.value = product.description_es || defaultTrans.description || '';
+  if (highlightEsField) highlightEsField.value = product.highlight_es || defaultTrans.highlight || '';
 
   // Foto
   const urlInput = document.getElementById('product-image-url');
@@ -992,6 +1013,23 @@ function setupProductsManagement() {
     updatePreview('');
   });
 
+  // Copiar dados em Português para os campos em Espanhol
+  const btnCopyPt = document.getElementById('btn-copy-pt-to-es');
+  btnCopyPt?.addEventListener('click', () => {
+    const ptName = document.getElementById('product-name')?.value || '';
+    const ptDesc = document.getElementById('product-description')?.value || '';
+    const ptHighlight = document.getElementById('product-highlight')?.value || '';
+
+    const nameEsInput = document.getElementById('product-name-es');
+    const descEsInput = document.getElementById('product-description-es');
+    const highlightEsInput = document.getElementById('product-highlight-es');
+
+    if (nameEsInput) nameEsInput.value = ptName;
+    if (descEsInput) descEsInput.value = ptDesc;
+    if (highlightEsInput && ptHighlight) highlightEsInput.value = ptHighlight;
+    showToast('Textos em português copiados para o campo em espanhol!', '📋');
+  });
+
   // Submissão do Formulário de Produto
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1005,7 +1043,9 @@ function setupProductsManagement() {
 
     const formId = document.getElementById('product-form-id').value.trim();
     const name = document.getElementById('product-name').value.trim();
+    const nameEs = document.getElementById('product-name-es')?.value.trim() || null;
     const description = document.getElementById('product-description').value.trim();
+    const descriptionEs = document.getElementById('product-description-es')?.value.trim() || null;
     const category = document.getElementById('product-category').value.trim();
     const type = form.querySelector('input[name="product_type"]:checked')?.value || 'alimento';
     const priceStr = document.getElementById('product-price').value.trim();
@@ -1013,6 +1053,7 @@ function setupProductsManagement() {
     const statusBool = (form.querySelector('input[name="product_status"]:checked')?.value || 'true') === 'true';
     const imageUrl = document.getElementById('product-image-url').value.trim();
     const highlight = document.getElementById('product-highlight')?.value.trim() || null;
+    const highlightEs = document.getElementById('product-highlight-es')?.value.trim() || null;
     const cmvStr = document.getElementById('product-cmv')?.value.trim() || '0';
     const sausagesStr = document.getElementById('product-sausages')?.value.trim() || (type === 'alimento' ? '1' : '0');
 
@@ -1063,8 +1104,10 @@ function setupProductsManagement() {
     const payload = {
       id: formId || undefined,
       name,
+      name_es: nameEs,
       slug: generateSlug(name),
       description,
+      description_es: descriptionEs,
       type,
       category: category || (type === 'bebida' ? 'Outros' : 'Outros'),
       price_gs: priceNum,
@@ -1072,6 +1115,7 @@ function setupProductsManagement() {
       active: statusBool,
       image_url: imageUrl,
       highlight,
+      highlight_es: highlightEs,
       cmv_gs: Number(cmvStr) || 0,
       sausages_qty: Number(sausagesStr) || (type === 'alimento' ? 1 : 0)
     };

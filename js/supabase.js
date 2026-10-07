@@ -152,8 +152,10 @@ export async function saveProductToSupabase(productData) {
   try {
     const payload = {
       name: productData.name,
+      name_es: productData.name_es !== undefined && productData.name_es !== null && productData.name_es.trim() !== '' ? productData.name_es.trim() : null,
       slug: productData.slug,
       description: productData.description || '',
+      description_es: productData.description_es !== undefined && productData.description_es !== null && productData.description_es.trim() !== '' ? productData.description_es.trim() : null,
       price_gs: Number(productData.price_gs),
       promotional_price_gs: productData.promotional_price_gs !== null && productData.promotional_price_gs !== undefined && productData.promotional_price_gs !== '' ? Number(productData.promotional_price_gs) : null,
       type: productData.type || 'alimento',
@@ -161,6 +163,7 @@ export async function saveProductToSupabase(productData) {
       active: productData.active !== false,
       image_url: productData.image_url || '',
       highlight: productData.highlight || null,
+      highlight_es: productData.highlight_es !== undefined && productData.highlight_es !== null && productData.highlight_es.trim() !== '' ? productData.highlight_es.trim() : null,
       cmv_gs: Number(productData.cmv_gs || 0),
       sausages_qty: Number(productData.sausages_qty || (productData.type === 'alimento' ? 1 : 0)),
       updated_at: new Date().toISOString()

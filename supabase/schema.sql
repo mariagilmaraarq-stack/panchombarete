@@ -10,8 +10,10 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS public.products (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
+    name_es TEXT,
     slug TEXT NOT NULL UNIQUE,
     description TEXT,
+    description_es TEXT,
     price_gs NUMERIC NOT NULL CHECK (price_gs >= 0),
     promotional_price_gs NUMERIC CHECK (promotional_price_gs >= 0),
     type TEXT NOT NULL DEFAULT 'alimento' CHECK (type IN ('alimento', 'bebida')),
@@ -20,6 +22,7 @@ CREATE TABLE IF NOT EXISTS public.products (
     sausages_qty INTEGER NOT NULL DEFAULT 1,
     image_url TEXT,
     highlight TEXT,
+    highlight_es TEXT,
     active BOOLEAN NOT NULL DEFAULT true,
     sort_order INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -30,6 +33,9 @@ CREATE TABLE IF NOT EXISTS public.products (
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS type TEXT NOT NULL DEFAULT 'alimento';
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'Cachorro-quente';
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS promotional_price_gs NUMERIC;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS name_es TEXT;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS description_es TEXT;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS highlight_es TEXT;
 
 
 -- 2. TABELA: ADICIONAIS (add_ons)
