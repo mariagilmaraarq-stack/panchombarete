@@ -53,7 +53,7 @@ const server = http.createServer((req, res) => {
       SUPABASE_URL: fileEnv.SUPABASE_URL || process.env.SUPABASE_URL || 'https://vhhjbqkwvkktuahkqiwj.supabase.co',
       SUPABASE_ANON_KEY: anonKey,
       SUPABASE_PUBLISHABLE_KEY: pubKey,
-      WHATSAPP_NUMBER: fileEnv.WHATSAPP_NUMBER || process.env.WHATSAPP_NUMBER || '595983123456',
+      WHATSAPP_NUMBER: fileEnv.WHATSAPP_NUMBER || process.env.WHATSAPP_NUMBER || '595987683714',
       GOOGLE_MAPS_URL: fileEnv.GOOGLE_MAPS_URL || process.env.GOOGLE_MAPS_URL || ''
     };
     const jsContent = `window.__ENV__ = ${JSON.stringify(envData, null, 2)};\n`;

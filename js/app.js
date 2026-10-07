@@ -39,7 +39,11 @@ async function initStore() {
     const settings = await fetchStoreSettingsFromDB();
     if (settings) {
       if (settings.store_name) APP_CONFIG.STORE_NAME = settings.store_name;
-      if (settings.whatsapp_number) APP_CONFIG.WHATSAPP_NUMBER = settings.whatsapp_number;
+      if (settings.whatsapp_number) {
+        APP_CONFIG.WHATSAPP_NUMBER = settings.whatsapp_number;
+        const footerWa = document.getElementById('footer-whatsapp');
+        if (footerWa) footerWa.href = `https://wa.me/${settings.whatsapp_number.replace(/\D/g, '')}`;
+      }
       if (settings.address) {
         APP_CONFIG.ADDRESS = settings.address;
         const addressEl = document.getElementById('store-address-display');

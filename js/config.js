@@ -19,7 +19,7 @@ export const APP_CONFIG = {
   SUPABASE_PUBLISHABLE_KEY: getEnv('SUPABASE_PUBLISHABLE_KEY') || getEnv('SUPABASE_ANON_KEY'),
   
   // WhatsApp oficial para recebimento de pedidos
-  WHATSAPP_NUMBER: getEnv('WHATSAPP_NUMBER') || '595983123456',
+  WHATSAPP_NUMBER: getEnv('WHATSAPP_NUMBER') || '595987683714',
   
   // Localização física em Ciudad del Este
   ADDRESS: 'Julio Cesar Riquelme (F8QH+75H) — Ciudad del Este 100169, Paraguay',

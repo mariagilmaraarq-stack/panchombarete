@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS public.order_addons (
 CREATE TABLE IF NOT EXISTS public.settings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     store_name TEXT NOT NULL DEFAULT 'PANCHO MBARATE',
-    whatsapp_number TEXT NOT NULL DEFAULT '595983123456',
+    whatsapp_number TEXT NOT NULL DEFAULT '595987683714',
     address TEXT NOT NULL DEFAULT 'Julio Cesar Riquelme (F8QH+75H) — Ciudad del Este 100169, Paraguay',
     maps_url TEXT DEFAULT 'https://maps.google.com/?q=-25.51158425546612,-54.6720151',
     instagram_url TEXT DEFAULT 'https://instagram.com/panchombarate',
@@ -372,7 +372,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO public.settings (store_name, whatsapp_number, address, maps_url, instagram_url, opening_time, closing_time)
 VALUES (
     'PANCHO MBARATE',
-    '595983123456',
+    '595987683714',
     'Julio Cesar Riquelme (F8QH+75H) — Ciudad del Este 100169, Paraguay',
     'https://maps.google.com/?q=-25.51158425546612,-54.6720151',
     'https://instagram.com/panchombarate',
