@@ -229,7 +229,7 @@ function seedInitialDemoOrders() {
       id: 'local-demo-2',
       order_code: 'PM-20260924-103000-202',
       customer_name: 'Gabriela Duarte',
-      pickup_time: 'Sin Cebolla',
+      pickup_time: 'Sin Vinagreta',
       subtotal_gs: 22000,
       addons_total_gs: 2500,
       drinks_total_gs: 7000,
