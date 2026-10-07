@@ -95,7 +95,7 @@ serve(async (req) => {
       .insert({
         order_code: orderCode,
         customer_name: customerName.trim(),
-        pickup_time: pickupTime || "10–15 min",
+        pickup_time: pickupTime || "Completo (con todo)",
         subtotal_gs: subtotalGs,
         addons_total_gs: addonsTotalGs,
         total_gs: totalGs,

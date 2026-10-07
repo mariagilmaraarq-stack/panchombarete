@@ -9,7 +9,7 @@ class CartState {
     this.selectedAddons = new Map(); // id -> addon object
     this.selectedDrinks = new Map(); // id -> { drink, quantity }
     this.customerName = '';
-    this.pickupTime = '10–15 min';
+    this.pickupTime = 'Completo (con todo)';
     this.customTime = '';
   }
 
@@ -218,10 +218,10 @@ class CartState {
   }
 
   getEffectivePickupTime() {
-    if (this.pickupTime === 'horário específico' && this.customTime) {
-      return this.customTime;
+    if (this.customTime && this.customTime.trim()) {
+      return this.customTime.trim();
     }
-    return this.pickupTime || 'Agora';
+    return this.pickupTime || 'Completo (con todo)';
   }
 
   getSelectedAddonsList() {

@@ -212,7 +212,7 @@ function seedInitialDemoOrders() {
       id: 'local-demo-1',
       order_code: 'PM-20260924-101500-101',
       customer_name: 'Alejandro Benítez',
-      pickup_time: '10–15 min',
+      pickup_time: 'Completo (con todo)',
       subtotal_gs: 40000,
       addons_total_gs: 12000,
       drinks_total_gs: 7000,
@@ -229,7 +229,7 @@ function seedInitialDemoOrders() {
       id: 'local-demo-2',
       order_code: 'PM-20260924-103000-202',
       customer_name: 'Gabriela Duarte',
-      pickup_time: 'Agora',
+      pickup_time: 'Sin Cebolla',
       subtotal_gs: 22000,
       addons_total_gs: 2500,
       drinks_total_gs: 7000,
@@ -246,7 +246,7 @@ function seedInitialDemoOrders() {
       id: 'local-demo-3',
       order_code: 'PM-20260924-104500-303',
       customer_name: 'Rodrigo Romero',
-      pickup_time: '20–30 min',
+      pickup_time: 'Sin Mostaza, Sin Salsa',
       subtotal_gs: 15000,
       addons_total_gs: 0,
       drinks_total_gs: 5000,
@@ -373,7 +373,7 @@ function renderOrdersTable() {
         ${drinksString ? `<span class="text-[10px] text-emerald-700 font-bold block">${drinksString}</span>` : ''}
       </td>
       <td class="py-3 px-3 font-bold text-coffee">
-        ⏱️ ${order.pickup_time}
+        🌭 ${order.pickup_time || 'Completo'}
       </td>
       <td class="py-3 px-3 font-black text-coffee">
         ${formatGs(order.total_gs)}

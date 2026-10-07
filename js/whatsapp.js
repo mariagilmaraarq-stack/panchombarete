@@ -53,7 +53,7 @@ ${lancheLabel} ${lancheLine}
 
     message += `
 *Total:* ${cleanTotal}
-*Retiro:* ${pickupTime}
+*Quitar del Pancho / Obs:* ${pickupTime || 'Completo (con todo)'}
 ---------------------------------
 _Pedido generado por el menú digital. Retiro en el mostrador._`;
 
@@ -76,7 +76,7 @@ ${lancheLabel} ${lancheLine}
 
   message += `
 *Total:* ${cleanTotal}
-*Retirada:* ${pickupTime}
+*Tirar do Dog / Obs:* ${pickupTime || 'Completo (com tudo)'}
 ---------------------------------
 _Pedido gerado pelo cardápio digital. Retirada no balcão._`;
 

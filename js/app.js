@@ -632,27 +632,89 @@ function setupEventListeners() {
     }
   });
 
-  // Chips de horário
+  // Chips de Ingredientes a Remover / Observações do Dog
   const chips = document.querySelectorAll('.pickup-chip');
+  const completeChip = document.querySelector('.pickup-chip[data-type="complete"]');
+  const customNotesInput = document.getElementById('custom-time-input');
+
+  function updateExcludedIngredients() {
+    const isEs = getCurrentLang() === 'es';
+    const activeExclusions = Array.from(document.querySelectorAll('.pickup-chip:not([data-type="complete"]).is-active'))
+      .map(c => isEs ? c.getAttribute('data-val-es') : c.getAttribute('data-val-pt'));
+
+    const customText = customNotesInput?.value.trim();
+
+    if (customText) {
+      cart.setCustomTime(customText);
+      return;
+    }
+
+    if (activeExclusions.length > 0) {
+      const combined = activeExclusions.join(', ');
+      cart.setPickupTime(combined);
+      cart.customTime = '';
+    } else {
+      const defaultComplete = isEs ? 'Completo (con todo)' : 'Completo (com tudo)';
+      cart.setPickupTime(defaultComplete);
+      cart.customTime = '';
+      if (completeChip) {
+        completeChip.classList.add('is-active', 'border-mustard', 'bg-mustard-light', 'font-black');
+        completeChip.classList.remove('border-coffee/15', 'bg-white', 'text-coffee');
+      }
+    }
+  }
+
+  // Atualiza texto quando muda o idioma se estiver como "Completo"
+  window.addEventListener('language:changed', () => {
+    if (completeChip && completeChip.classList.contains('is-active') && (!customNotesInput || !customNotesInput.value.trim())) {
+      updateExcludedIngredients();
+    }
+  });
+
   chips.forEach(chip => {
     chip.addEventListener('click', () => {
-      chips.forEach(c => {
-        c.classList.remove('is-active', 'border-mustard', 'bg-mustard-light', 'font-black');
-        c.classList.add('border-coffee/10', 'font-bold');
-      });
-      chip.classList.add('is-active', 'border-mustard', 'bg-mustard-light', 'font-black');
-      chip.classList.remove('border-coffee/10', 'font-bold');
+      const isComplete = chip.getAttribute('data-type') === 'complete';
+      if (isComplete) {
+        // Desmarca todas as exclusões e ativa o "Completo"
+        chips.forEach(c => {
+          c.classList.remove('is-active', 'border-redSport', 'bg-red-50', 'text-redSport', 'font-black', 'border-mustard', 'bg-mustard-light');
+          c.classList.add('border-coffee/15', 'bg-white', 'text-coffee', 'font-bold');
+        });
+        chip.classList.add('is-active', 'border-mustard', 'bg-mustard-light', 'font-black');
+        chip.classList.remove('border-coffee/15', 'bg-white');
+        if (customNotesInput) customNotesInput.value = '';
+        updateExcludedIngredients();
+      } else {
+        // Clicou num ingrediente para remover
+        if (completeChip) {
+          completeChip.classList.remove('is-active', 'border-mustard', 'bg-mustard-light', 'font-black');
+          completeChip.classList.add('border-coffee/15', 'bg-white', 'text-coffee', 'font-bold');
+        }
 
-      const timeVal = chip.getAttribute('data-time');
-      cart.setPickupTime(timeVal);
-      if (customTimeInput) customTimeInput.value = '';
+        const willBeActive = !chip.classList.contains('is-active');
+        if (willBeActive) {
+          chip.classList.add('is-active', 'border-redSport', 'bg-red-50', 'text-redSport', 'font-black');
+          chip.classList.remove('border-coffee/15', 'bg-white', 'text-coffee');
+        } else {
+          chip.classList.remove('is-active', 'border-redSport', 'bg-red-50', 'text-redSport', 'font-black');
+          chip.classList.add('border-coffee/15', 'bg-white', 'text-coffee', 'font-bold');
+        }
+
+        if (customNotesInput) customNotesInput.value = '';
+        updateExcludedIngredients();
+      }
     });
   });
 
-  customTimeInput?.addEventListener('input', (e) => {
+  customNotesInput?.addEventListener('input', (e) => {
     if (e.target.value.trim().length > 0) {
-      chips.forEach(c => c.classList.remove('is-active', 'border-mustard', 'bg-mustard-light', 'font-black'));
-      cart.setCustomTime(e.target.value);
+      chips.forEach(c => {
+        c.classList.remove('is-active', 'border-mustard', 'bg-mustard-light', 'border-redSport', 'bg-red-50', 'text-redSport', 'font-black');
+        c.classList.add('border-coffee/15', 'bg-white', 'text-coffee', 'font-bold');
+      });
+      cart.setCustomTime(e.target.value.trim());
+    } else {
+      updateExcludedIngredients();
     }
   });
 
