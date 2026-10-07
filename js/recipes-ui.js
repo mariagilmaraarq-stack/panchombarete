@@ -157,11 +157,6 @@ function setupAuth() {
     }
   });
 
-  demoBtn?.addEventListener('click', () => {
-    sessionStorage.setItem('PM_ADMIN_LOGGED', 'true');
-    unlockDashboard(true, 'Admin Demo Local');
-    showToast('Modo de demonstração local ativado.', 'info');
-  });
 
   logoutBtn?.addEventListener('click', async () => {
     const sb = getSupabase();

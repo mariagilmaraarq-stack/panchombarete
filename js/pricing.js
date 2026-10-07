@@ -181,10 +181,6 @@ function setupAuth() {
     }
   });
 
-  demoBtn?.addEventListener('click', () => {
-    sessionStorage.setItem('PM_ADMIN_LOGGED', 'true');
-    unlockDashboard(true, 'Admin Demo Local');
-  });
 
   logoutBtn?.addEventListener('click', async () => {
     const sb = getSupabase();
